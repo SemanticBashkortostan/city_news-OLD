@@ -19,6 +19,7 @@
 db/*.sqlite3
 /log/*
 /tmp/*
+.idea/
 
 # various artifacts
 **.war
