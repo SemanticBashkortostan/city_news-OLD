@@ -249,6 +249,7 @@ DEPENDENCIES
   haml-rails (>= 0.3.5)
   hpricot (>= 0.8.6)
   jquery-rails
+  kaminari
   launchy (>= 2.1.2)
   pg
   quiet_assets (>= 1.0.1)
