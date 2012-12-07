@@ -11,7 +11,40 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20121204064451) do
+ActiveRecord::Schema.define(:version => 20121207052127) do
+
+  create_table "active_admin_comments", :force => true do |t|
+    t.string   "resource_id",   :null => false
+    t.string   "resource_type", :null => false
+    t.integer  "author_id"
+    t.string   "author_type"
+    t.text     "body"
+    t.datetime "created_at",    :null => false
+    t.datetime "updated_at",    :null => false
+    t.string   "namespace"
+  end
+
+  add_index "active_admin_comments", ["author_type", "author_id"], :name => "index_active_admin_comments_on_author_type_and_author_id"
+  add_index "active_admin_comments", ["namespace"], :name => "index_active_admin_comments_on_namespace"
+  add_index "active_admin_comments", ["resource_type", "resource_id"], :name => "index_admin_notes_on_resource_type_and_resource_id"
+
+  create_table "features", :force => true do |t|
+    t.string   "token"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+  end
+
+  create_table "feeds", :force => true do |t|
+    t.string   "title"
+    t.string   "url"
+    t.text     "summary"
+    t.datetime "published_at"
+    t.integer  "text_class_id"
+    t.datetime "created_at",        :null => false
+    t.datetime "updated_at",        :null => false
+    t.integer  "mark_id"
+    t.integer  "assigned_class_id"
+  end
 
   create_table "roles", :force => true do |t|
     t.string   "name"
@@ -23,6 +56,20 @@ ActiveRecord::Schema.define(:version => 20121204064451) do
 
   add_index "roles", ["name", "resource_type", "resource_id"], :name => "index_roles_on_name_and_resource_type_and_resource_id"
   add_index "roles", ["name"], :name => "index_roles_on_name"
+
+  create_table "text_classes", :force => true do |t|
+    t.string   "name"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+  end
+
+  create_table "text_classes_features", :force => true do |t|
+    t.integer "text_class_id"
+    t.integer "feature_id"
+  end
+
+  add_index "text_classes_features", ["feature_id", "text_class_id"], :name => "index_text_classes_features_on_feature_id_and_text_class_id"
+  add_index "text_classes_features", ["text_class_id", "feature_id"], :name => "index_text_classes_features_on_text_class_id_and_feature_id"
 
   create_table "users", :force => true do |t|
     t.string   "email",                  :default => "", :null => false
