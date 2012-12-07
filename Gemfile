@@ -34,3 +34,5 @@ gem "capybara", ">= 1.1.3", :group => :test
 gem "factory_girl_rails", ">= 4.1.0", :group => [:development, :test]
 gem "quiet_assets", ">= 1.0.1", :group => :development
 gem "therubyracer", ">= 0.10.2", :group => :assets, :platform => :ruby
+
+gem "naive_bayes", :git => "/home/mineralka/Dropbox/mo24a/5 курс/Diplom/application"

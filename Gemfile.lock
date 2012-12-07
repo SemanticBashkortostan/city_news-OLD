@@ -1,3 +1,9 @@
+GIT
+  remote: /home/mineralka/Dropbox/mo24a/5 курс/Diplom/application
+  revision: 84d0f96a62343cf5051664997823feaf5574c189
+  specs:
+    naive_bayes (0.0.1)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -265,6 +271,7 @@ DEPENDENCIES
   jquery-rails
   kaminari
   launchy (>= 2.1.2)
+  naive_bayes!
   pg
   quiet_assets (>= 1.0.1)
   rails (= 3.2.9)
