@@ -1,5 +1,38 @@
 #coding: utf-8
 namespace :bayes do
+
+
+  def precision( confusion_matrix, klass )
+    confusion_matrix[klass][klass] / confusion_matrix.values.inject(0.0){ |s,e| s += e[klass].to_f }
+  end
+
+
+  def recall(confusion_matrix, klass)
+    confusion_matrix[klass][klass].to_f / confusion_matrix[klass].values.sum
+  end
+
+
+  def accuracy( confusion_matrix )
+    val = 0.0
+    denom = 0.0 # Count of all documents in test
+    klasses = confusion_matrix.keys
+    klasses.each do |klass|
+      denom += confusion_matrix.values.inject(0.0){ |s,e| s += e[klass].to_f }
+    end
+    klasses.each do |klass|
+      val += confusion_matrix[klass][klass] / denom
+    end
+    val
+  end
+
+
+  def f_measure(confusion_matrix, klass, beta=1)
+    precision = precision(confusion_matrix, klass)
+    recall = recall(confusion_matrix, klass)
+    ( (beta**2 + 1) * precision * recall )/( beta**2 * precision + recall )
+  end
+
+
   task :train_and_test => :environment do
     @nb = NaiveBayes::NaiveBayes.new
     cities = TextClass.where :name => ["Уфа", "Стерлитамак", "Салават"]
@@ -30,7 +63,8 @@ namespace :bayes do
 
   task :train_and_test_with_merging => :environment do
     @nb = NaiveBayes::NaiveBayes.new
-    cities = TextClass.where :name => ["Уфа", "Стерлитамак", "Салават"]
+    cities_names = ["Уфа", "Стерлитамак", "Салават"]
+    cities = TextClass.where :name => cities_names
     @train_data = Feed.where( :mark_id => Feed::TRAINING, :text_class_id => cities  )
     @test_data  = Feed.where( :mark_id => Feed::DEV_TEST, :text_class_id => cities )
 
@@ -44,6 +78,11 @@ namespace :bayes do
       confusion_matrix[feed.text_class.name] ||= {}
       confusion_matrix[feed.text_class.name][classified] = confusion_matrix[feed.text_class.name][classified].to_i + 1
     end
+    #precision = precision( confusion_matrix )
+    #recall = recall( confusion_matrix )
+    accuracy = accuracy( confusion_matrix )
     p confusion_matrix
+    p accuracy
+    cities_names.each{ |city| p [city, f_measure(confusion_matrix, city)] }
   end
 end

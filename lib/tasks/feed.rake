@@ -14,6 +14,7 @@ namespace :training_feeds do
   end
 
 
+  #TODO: Подчистить код, т.к для быстрого получения девелопмент даты пришлось испачкаться
   def satisfaction?(city, entry)
     regexp = nil
     case city
