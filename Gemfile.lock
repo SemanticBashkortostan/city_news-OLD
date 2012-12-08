@@ -1,6 +1,5 @@
-GIT
+PATH
   remote: /home/mineralka/Dropbox/mo24a/5 курс/Diplom/application
-  revision: 84d0f96a62343cf5051664997823feaf5574c189
   specs:
     naive_bayes (0.0.1)
 
