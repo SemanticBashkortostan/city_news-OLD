@@ -23,7 +23,7 @@ ActiveAdmin.register Feed do
   form do |f|
     f.inputs
     f.inputs "Others" do
-      f.input :mark_id, :as => :select, :collection => (1..4).to_a
+      f.input :mark_id, :as => :select, :collection => Feed.mark_options
     end
     f.actions
   end

@@ -6,10 +6,13 @@ class Feed < ActiveRecord::Base
 
   validates :url, :uniqueness => true
 
+  before_save :set_mark
+
 
   TRAINING = 1
   DEV_TEST = 2
   TEST = 3
+  UNMARKED = 4
   def mark
     case mark_id
       when TRAINING then "Training"
@@ -19,8 +22,16 @@ class Feed < ActiveRecord::Base
     end
   end
 
-
   def self.mark_options
-    {"Training" => TRAINING, "Development Test" => DEV_TEST, "Test" => TEST}
+    {"Training" => TRAINING, "Development Test" => DEV_TEST, "Test" => TEST, "Unmarked" => UNMARKED}
   end
+
+
+  protected
+
+
+  def set_mark
+    mark_id = UNMARKED
+  end
+
 end

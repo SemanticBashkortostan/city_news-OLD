@@ -1,8 +1,8 @@
 #coding: utf-8
 namespace :training_feeds do
-  sources = { :ishimbay => "http://ishimbay-news.ru/rss.xml",
-               :salavat => "http://slvnews.ru/rss",
-               :ufa => "http://rssportal.ru/feed/129727.xml",
+  sources = { :ishimbay => ["http://ishimbay-news.ru/rss.xml"],
+               :salavat => ["http://slvnews.ru/rss"],
+               :ufa => ["http://rssportal.ru/feed/129727.xml", "http://news.yandex.ru/Ufa/index.rss"],
                :sterlitamak => ["http://rssportal.ru/feed/223350.xml"]}
   # http://rssportal.ru/
 
@@ -26,41 +26,39 @@ namespace :training_feeds do
   end
 
 
-  task :ishimbay => :environment do
-    feed = Feedzirra::Feed.fetch_and_parse( sources[:ishimbay] )
-    feed.entries[0..50].each do |entry|
-      text_class = TextClass.find_by_name "Ишимбай"
-      create_feed( entry, text_class )
+  # Получаем новости с нескольких источников для одного города
+  # Количество делится поровну, например если нужно 50, то с каждого источника возьмется по 25
+  def fetch_and_create_feed(paths, city, range=(0..50))
+    to = range.first
+    feed = Feedzirra::Feed.fetch_and_parse( paths )
+    paths.each_with_index do |path, ind|
+      from = to
+      to = range.last/(paths.count - ind)
+      rng = (from..to)
+      feed[path].entries[rng].each do |entry|
+        text_class = TextClass.find_by_name city
+        create_feed( entry, text_class )
+      end
     end
+  end
+
+  task :ishimbay => :environment do
+    fetch_and_create_feed( sources[:ishimbay], "Ишимбай" )
   end
 
 
   task :salavat => :environment do
-    feed = Feedzirra::Feed.fetch_and_parse( sources[:salavat] )
-    feed.entries[80..130].each do |entry|
-      text_class = TextClass.find_by_name "Салават"
-      create_feed( entry, text_class )
-    end
+    fetch_and_create_feed( sources[:salavat], "Салават" )
   end
 
 
   task :ufa => :environment do
-    feed = Feedzirra::Feed.fetch_and_parse( sources[:ufa] )
-    feed.entries[16..20].each do |entry|
-      text_class = TextClass.find_by_name "Уфа"
-      
-      create_feed( entry, text_class, :mark_id => Feed::DEV_TEST ) if satisfaction?( "Уфа", entry )
-    end
+    fetch_and_create_feed( sources[:ufa], "Уфа" )
   end
 
 
   task :sterlitamak => :environment do
-    feed = Feedzirra::Feed.fetch_and_parse( sources[:sterlitamak] )
-    feed[ sources[:sterlitamak][0] ].entries[111..130].each do |entry|
-      text_class = TextClass.find_by_name "Стерлитамак"
-
-      create_feed( entry, text_class, :mark_id => Feed::DEV_TEST ) if satisfaction?( "Стерлитамак", entry )
-    end
+    fetch_and_create_feed( sources[:sterlitamak], "Стерлитамак" )
   end
 
 end
