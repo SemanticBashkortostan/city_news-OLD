@@ -31,7 +31,7 @@ class Feed < ActiveRecord::Base
 
 
   def set_mark
-    mark_id = UNMARKED
+    mark_id ||= UNMARKED
   end
 
 end

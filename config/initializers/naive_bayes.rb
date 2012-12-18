@@ -11,8 +11,9 @@ module NaiveBayes
       regexp_salavat = /(Салав+[[:word:]]+|САЛАВ+[[:word:]]+|салав+[[:word:]]+)/
       regexp_ufa = /(Уф+[[:word:]]+|УФ+[[:word:]]+|уфи+[[:word:]]+)/
       regexp_str = /(Стерл+[[:word:]]+|СТЕРЛ+[[:word:]]+|стерл+[[:word:]]+)/
- 	    [string.scan(regexp_str), string.scan(regexp_salavat), string.scan(regexp_ufa)].flatten
-
+      regexp_domain = /Domain:.+/
+ 	    features = [string.scan(regexp_str), string.scan(regexp_salavat), string.scan(regexp_ufa), string.scan(regexp_domain)[0].split("/")[2] ].flatten
+      features
       #[string.scan(regexp_str), string.scan(regexp_salavat), string.scan(regexp_ufa), string.scan(regexp_ishimbay)].flatten
  	  end
   end

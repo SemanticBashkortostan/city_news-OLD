@@ -62,3 +62,4 @@ namespace :training_feeds do
   end
 
 end
+
