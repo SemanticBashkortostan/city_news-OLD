@@ -69,25 +69,23 @@ namespace :bayes do
     @test_data  = Feed.where( :mark_id => Feed::DEV_TEST, :text_class_id => cities )
 
     @train_data.each do |feed|
-      #@nb.train( feed.title + " " + feed.summary, feed.text_class_id )
       str = feed.title + " " + feed.summary + " " + "Domain: #{feed.url}"
       @nb.train( str, feed.text_class_id )
     end
 
     confusion_matrix = {}
     @test_data.each do |feed|
-      #classified = TextClass.find(@nb.classify( feed.title + " " + feed.summary )[:class]).name
       str = feed.title + " " + feed.summary + " " + "Domain: #{feed.url}"
       classified = TextClass.find(@nb.classify( str )[:class]).name
       confusion_matrix[feed.text_class.name] ||= {}
       confusion_matrix[feed.text_class.name][classified] = confusion_matrix[feed.text_class.name][classified].to_i + 1
+      p [feed.text_class.name, feed.title, feed.summary, feed.url, classified]
     end
-    #precision = precision( confusion_matrix )
-    #recall = recall( confusion_matrix )
     accuracy = accuracy( confusion_matrix )
     p confusion_matrix
     p accuracy
     cities_names.each{ |city| p [city, f_measure(confusion_matrix, city)] }
+    p @nb.export[:vocabolary].sort
   end
 
 

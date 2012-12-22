@@ -12,11 +12,18 @@ module NaiveBayes
       regexp_ufa = /(Уф+[[:word:]]+|УФ+[[:word:]]+|уфи+[[:word:]]+)/
       regexp_str = /(Стерл+[[:word:]]+|СТЕРЛ+[[:word:]]+|стерл+[[:word:]]+)/
       regexp_domain = /Domain:.+/
- 	    features = [string.scan(regexp_str), string.scan(regexp_salavat), string.scan(regexp_ufa), string.scan(regexp_domain)[0].split("/")[2] ].flatten
+ 	    features = [string.scan(regexp_str), string.scan(regexp_salavat), string.scan(regexp_ufa)].flatten.map{ |word| word.mb_chars.downcase.to_s }
+      features.map!{|e| lemmatize(e)}.compact!
+      features << string.scan(regexp_domain)[0].split("/")[2]
       features
-      #[string.scan(regexp_str), string.scan(regexp_salavat), string.scan(regexp_ufa), string.scan(regexp_ishimbay)].flatten
- 	  end
+    end
+
+
+    def lemmatize word
+      (`./lib/turglem-client #{word}`).split(" ")[1]
+    end
   end
+
 
 
 end
