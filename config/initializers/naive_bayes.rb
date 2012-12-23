@@ -4,16 +4,13 @@ module NaiveBayes
 
 	class NaiveBayes
     def get_features( string )
-      #regexp = /[[:word:]]+{3,}/
-      # (Ишим+[[:word:]]+|ИШИМ+[[:word:]]+|ишим+[[:word:]]+)
-      regexp_ishimbay = /(Ишим+[[:word:]]+|ИШИМ+[[:word:]]+|ишим+[[:word:]]+)/   # Ишембай - bashkirian
-
-      regexp_salavat = {:regexp => /(Салав+[[:word:]]+|САЛАВ+[[:word:]]+|салав+[[:word:]]+)/, :name => "Салават"}
-      regexp_ufa = {:regexp => /(Уф+[[:word:]]+|УФ+[[:word:]]+|уфи+[[:word:]]+)/, :name => "Уфа"}
-      regexp_str = {:regexp => /(Стерл+[[:word:]]+|СТЕРЛ+[[:word:]]+|стерл+[[:word:]]+)/, :name => "Стерлитамак"}
-      regexp_domain = /Domain:.+/
- 	    features = [scan(string, regexp_str), scan(string, regexp_salavat), scan(string, regexp_ufa)].compact.map{ |word| word.mb_chars.downcase.to_s }
-      features << string.scan(regexp_domain)[0].split("/")[2]
+      features = []
+      Settings.bayes.shorten_klasses.each do |short_name|
+        regexp_hash = { :regexp => Regexp.new( Settings.bayes.regexp[short_name][0] ), :name => Settings.bayes.regexp[short_name][1] }
+        feature = scan( string, regexp_hash  )
+        features << feature if feature
+      end
+      features << string.scan( Regexp.new( Settings.bayes.regexp["domain"][0] ) )[0].split("/")[2]
       features
     end
 

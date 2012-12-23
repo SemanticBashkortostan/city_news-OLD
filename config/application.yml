@@ -1,0 +1,22 @@
+#coding: utf-8
+defaults: &defaults
+  bayes:
+    klasses: ["Уфа", "Стерлитамак", "Салават"]
+    shorten_klasses: ["ufa", "str", "slv"]
+    regexp:
+      ufa: [ "(Уф+[[:word:]]+|УФ+[[:word:]]+|уфи+[[:word:]]+)", "Уфа" ]
+      str: [ "(Стерл+[[:word:]]+|СТЕРЛ+[[:word:]]+|стерл+[[:word:]]+)", "Стерлитамак" ]
+      slv: [ "(Салав+[[:word:]]+|САЛАВ+[[:word:]]+|салав+[[:word:]]+)", "Салават" ]
+      domain: [ "Domain:.+", "Domain" ]
+      ishimbay: [ "(Ишим+[[:word:]]+|ИШИМ+[[:word:]]+|ишим+[[:word:]]+)", "Ишимбай" ]
+
+
+development:
+  <<: *defaults
+  neat_setting: 800
+
+test:
+  <<: *defaults
+
+production:
+  <<: *defaults

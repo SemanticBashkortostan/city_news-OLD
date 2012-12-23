@@ -9,7 +9,7 @@ namespace :bayes do
 
   task :train_and_test_with_merging => :environment do
     @nb = NaiveBayes::NaiveBayes.new
-    cities_names = ["Уфа", "Стерлитамак", "Салават"]
+    cities_names = Settings.bayes.klasses
     cities = TextClass.where :name => cities_names
     @train_data = Feed.where( :mark_id => Feed::TRAINING, :text_class_id => cities  )
     @test_data  = Feed.where( :mark_id => Feed::DEV_TEST, :text_class_id => cities )
@@ -37,7 +37,7 @@ namespace :bayes do
 
 
   task :test_with_regexp => :environment do
-    cities_names = ["Уфа", "Стерлитамак", "Салават"]
+    cities_names = Settings.bayes.klasses
     cities = TextClass.where :name => cities_names
     @test_data  = Feed.where( :mark_id => [Feed::DEV_TEST], :text_class_id => cities )
 
@@ -54,12 +54,10 @@ namespace :bayes do
 
 
   def classify_with_regexp( string )
-    regexp_salavat = /(Салав+[[:word:]]+|САЛАВ+[[:word:]]+|салав+[[:word:]]+)/
-    regexp_ufa = /(Уф+[[:word:]]+|УФ+[[:word:]]+|уфи+[[:word:]]+)/
-    regexp_str = /(Стерл+[[:word:]]+|СТЕРЛ+[[:word:]]+|стерл+[[:word:]]+)/
-    return "Стерлитамак" if not string.scan(regexp_str).blank?
-    return "Салават" if not string.scan(regexp_salavat).blank?
-    return "Уфа" if not string.scan(regexp_ufa).blank?
+    Settings.bayes.shorten_klasses.each do |short_name|
+      regexp_arr = Settings.bayes.regexp["short_name"]
+      return regexp_arr[1] unless string.scan( Regexp.new( regexp_arr[0] ) ).blank?
+    end
   end
 
 
