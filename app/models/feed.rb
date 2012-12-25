@@ -27,6 +27,11 @@ class Feed < ActiveRecord::Base
   end
 
 
+  def training_string
+    title + " " + summary + " " + "Domain: #{url}"
+  end
+
+
   protected
 
 
