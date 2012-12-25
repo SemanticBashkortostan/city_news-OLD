@@ -226,6 +226,7 @@ GEM
     simple_form (2.0.4)
       actionpack (~> 3.0)
       activemodel (~> 3.0)
+    simpleidn (0.0.4)
     sprockets (2.2.2)
       hike (~> 1.2)
       multi_json (~> 1.0)
@@ -284,6 +285,7 @@ DEPENDENCIES
   sass-rails (~> 3.2.3)
   settingslogic
   simple_form (>= 2.0.4)
+  simpleidn
   therubyracer (>= 0.10.2)
   uglifier (>= 1.0.3)
   unicorn (>= 4.3.1)

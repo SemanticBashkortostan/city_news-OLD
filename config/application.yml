@@ -7,9 +7,9 @@ defaults: &defaults
       ufa: [ "(Уф+[[:word:]]+|УФ+[[:word:]]+|уфи+[[:word:]]+)", "Уфа" ]
       str: [ "(Стерл+[[:word:]]+|СТЕРЛ+[[:word:]]+|стерл+[[:word:]]+)", "Стерлитамак" ]
       slv: [ "(Салав+[[:word:]]+|САЛАВ+[[:word:]]+|салав+[[:word:]]+)", "Салават" ]
-      domain: [ "Domain:.+", "Domain" ]
       ishimbay: [ "(Ишим+[[:word:]]+|ИШИМ+[[:word:]]+|ишим+[[:word:]]+)", "Ишимбай" ]
-
+      neft: [ "(Нефтек+[[:word:]]+|НЕФТЕК+[[:word:]]+|нефтек+[[:word:]]+)", "Нефтекамск" ]
+      domain: [ "Domain:.+", "Domain" ]
 
 development:
   <<: *defaults

@@ -16,6 +16,7 @@ gem "kaminari"
 gem "feedzirra", "~> 0.2.0.rc2"
 gem "settingslogic"
 gem "acts-as-taggable-on"
+gem "simpleidn"
 
 gem "naive_bayes", :path => "/home/mineralka/Dropbox/mo24a/5 курс/Diplom/application"
 

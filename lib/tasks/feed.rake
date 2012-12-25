@@ -1,10 +1,15 @@
 #coding: utf-8
 namespace :training_feeds do
-  sources = { :ishimbay => ["http://ishimbay-news.ru/rss.xml"],
-               :salavat => ["http://slvnews.ru/rss"],
+  sources = { :ishimbay => ["http://ishimbay-news.ru/rss.xml", "http://ishimbai.procrb.ru/rss/?rss=y",
+                            "http://vestivmeste.ru/index.php/v-dvuh-slovah?format=feed&type=rss",
+                            "http://восход-ишимбай.рф/index.php?option=com_content&view=category&id=8&Itemid=598&format=feed&type=rss",
+                            "http://восход-ишимбай.рф/index.php?option=com_content&view=category&id=10&Itemid=600&format=feed&type=rss",
+                            "http://восход-ишимбай.рф/index.php?option=com_content&view=category&id=26&Itemid=601&format=feed&type=rss"
+                            ],
+               :salavat => ["http://slvnews.ru/rss", "http://rssportal.ru/feed/163654.xml" ],
                :ufa => ["http://rssportal.ru/feed/129727.xml", "http://news.yandex.ru/Ufa/index.rss"],
-               :sterlitamak => ["http://rssportal.ru/feed/223350.xml"]}
-  # http://rssportal.ru/
+               :sterlitamak => ["http://rssportal.ru/feed/223350.xml", "http://sterlegrad.ru/rss.xml"],
+               :neftekamsk => ["http://neftekamsk.procrb.ru/rss/?rss=y", "http://rssportal.ru/feed/240378.xml"]}
 
 
   def create_feed entry, text_class, options={}
@@ -14,36 +19,42 @@ namespace :training_feeds do
   end
 
 
-  #TODO: Подчистить код, т.к для быстрого получения девелопмент даты пришлось испачкаться
   def satisfaction?(city, entry)
     regexp = nil
-    case city
-      when "Уфа" then regexp = /(Уф+[[:word:]]+|УФ+[[:word:]]+|уфи+[[:word:]]+)/
-      when "Стерлитамак" then regexp = /(Стерл+[[:word:]]+|СТЕРЛ+[[:word:]]+|стерл+[[:word:]]+)/
-    end
-    return true unless entry.title.scan(regexp).empty?
-    return true unless entry.summary.scan(regexp).empty?
+    cities_regexp = Hash[ Settings.bayes.regexp.values.map{|e| e.reverse}]
+    regexp = Regexp.new cities_regexp[city]
+    str = entry.title + " " + entry.summary
+    return true unless str.scan(regexp).empty?
   end
 
 
   # Получаем новости с нескольких источников для одного города
-  # Количество делится поровну, например если нужно 50, то с каждого источника возьмется по 25
-  def fetch_and_create_feed(paths, city, range=(0..50))
-    to = range.first
+  # Новости начинает выбираться со следующего источника, пока не наберется указанное количество
+  def fetch_and_create_feed(paths, city, max = 50)
     feed = Feedzirra::Feed.fetch_and_parse( paths )
-    paths.each_with_index do |path, ind|
-      from = to
-      to = range.last/(paths.count - ind)
-      rng = (from..to)
-      feed[path].entries[rng].each do |entry|
-        text_class = TextClass.find_by_name city
-        create_feed( entry, text_class )
+    fetched = 0
+    catch (:done) do
+      paths.each_with_index do |path, ind|
+        feed[path].entries.each do |entry|
+          text_class = TextClass.find_by_name city
+          if satisfaction? city, entry
+            fetched += 1
+            create_feed( entry, text_class )
+          end
+          throw :done if fetched >= 50
+        end
       end
     end
   end
 
+
   task :ishimbay => :environment do
     fetch_and_create_feed( sources[:ishimbay], "Ишимбай" )
+  end
+
+
+  task :neftekamsk => :environment do
+    fetch_and_create_feed( sources[:neftekamsk], "Нефтекамск" )
   end
 
 
