@@ -45,6 +45,8 @@ GEM
     activesupport (3.2.9)
       i18n (~> 0.6)
       multi_json (~> 1.0)
+    acts-as-taggable-on (2.3.3)
+      rails (~> 3.0)
     addressable (2.3.2)
     arbre (1.0.1)
       activesupport (>= 3.0.0)
@@ -255,6 +257,7 @@ PLATFORMS
 
 DEPENDENCIES
   activeadmin
+  acts-as-taggable-on
   bootstrap-sass (>= 2.1.1.0)
   cancan (>= 1.6.8)
   capybara (>= 1.1.3)

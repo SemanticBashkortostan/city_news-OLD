@@ -9,7 +9,7 @@ namespace :training_feeds do
 
   def create_feed entry, text_class, options={}
     params = {:title => entry.title, :url => entry.url, :summary => entry.summary, :published_at => entry.published,
-                     :text_class => text_class, :mark_id => Feed::TRAINING}.merge( options )
+                     :text_class => text_class, :mark_list => ["train"]}.merge( options )
     Feed.create params
   end
 

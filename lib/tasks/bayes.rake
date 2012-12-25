@@ -11,7 +11,7 @@ namespace :bayes do
   task :init_train => :environment do
     nb = NaiveBayes::NaiveBayes.new
     text_classes = TextClass.where :name => Settings.bayes.klasses
-    train_data = Feed.where( :mark_id => Feed::TRAINING, :text_class_id => cities  )
+    train_data = Feed.tagged_with("train").where( :text_class_id => cities  )
 
     train_data.each do |feed|
       @nb.train feed.training_string, feed.text_class_id
@@ -25,8 +25,8 @@ namespace :bayes do
     @nb = NaiveBayes::NaiveBayes.new
     cities_names = Settings.bayes.klasses
     cities = TextClass.where :name => cities_names
-    @train_data = Feed.where( :mark_id => Feed::TRAINING, :text_class_id => cities  )
-    @test_data  = Feed.where( :mark_id => Feed::DEV_TEST, :text_class_id => cities )
+    @train_data = Feed.tagged_with("train").where( :text_class_id => cities  )
+    @test_data  = Feed.tagged_with("dev_test").where( :text_class_id => cities )
 
     @train_data.each do |feed|
       str = feed.title + " " + feed.summary + " " + "Domain: #{feed.url}"
@@ -53,7 +53,7 @@ namespace :bayes do
   task :test_with_regexp => :environment do
     cities_names = Settings.bayes.klasses
     cities = TextClass.where :name => cities_names
-    @test_data  = Feed.where( :mark_id => [Feed::DEV_TEST], :text_class_id => cities )
+    @test_data  = Feed.tagged_with("dev_test").where( :text_class_id => cities )
 
     confusion_matrix = {}
     @test_data.each do |feed|
