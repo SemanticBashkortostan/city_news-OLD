@@ -57,19 +57,20 @@ ActiveRecord::Schema.define(:version => 20121207052127) do
   add_index "roles", ["name", "resource_type", "resource_id"], :name => "index_roles_on_name_and_resource_type_and_resource_id"
   add_index "roles", ["name"], :name => "index_roles_on_name"
 
+  create_table "text_class_features", :force => true do |t|
+    t.integer "text_class_id"
+    t.integer "feature_id"
+    t.integer "feature_count"
+  end
+
+  add_index "text_class_features", ["feature_id", "text_class_id"], :name => "index_text_class_features_on_feature_id_and_text_class_id"
+  add_index "text_class_features", ["text_class_id", "feature_id"], :name => "index_text_class_features_on_text_class_id_and_feature_id"
+
   create_table "text_classes", :force => true do |t|
     t.string   "name"
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
   end
-
-  create_table "text_classes_features", :force => true do |t|
-    t.integer "text_class_id"
-    t.integer "feature_id"
-  end
-
-  add_index "text_classes_features", ["feature_id", "text_class_id"], :name => "index_text_classes_features_on_feature_id_and_text_class_id"
-  add_index "text_classes_features", ["text_class_id", "feature_id"], :name => "index_text_classes_features_on_text_class_id_and_feature_id"
 
   create_table "users", :force => true do |t|
     t.string   "email",                  :default => "", :null => false

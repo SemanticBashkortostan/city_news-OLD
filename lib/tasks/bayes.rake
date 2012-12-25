@@ -7,6 +7,20 @@ namespace :bayes do
   include Statistic
 
 
+  desc 'Train bayes network with training data'
+  task :init_train => :environment do
+    nb = NaiveBayes::NaiveBayes.new
+    text_classes = TextClass.where :name => Settings.bayes.klasses
+    train_data = Feed.where( :mark_id => Feed::TRAINING, :text_class_id => cities  )
+
+    train_data.each do |feed|
+      @nb.train feed.training_string, feed.text_class_id
+    end
+
+    @nb.save_to_database
+  end
+
+
   task :train_and_test_with_merging => :environment do
     @nb = NaiveBayes::NaiveBayes.new
     cities_names = Settings.bayes.klasses
@@ -32,7 +46,7 @@ namespace :bayes do
     p confusion_matrix
     p accuracy
     cities_names.each{ |city| p [city, f_measure(confusion_matrix, city)] }
-    p @nb.export[:vocabolary].sort
+    p @nb.export
   end
 
 
