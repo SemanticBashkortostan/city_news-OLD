@@ -8,18 +8,31 @@ class Feed < ActiveRecord::Base
 
   validates :url, :uniqueness => true
 
-  before_save :check_punycode_url, :strip_html_tags
+  before_validation :convert_if_punycode_url
+  before_save :strip_html_tags
 
 
-  def training_string
+  def string_for_classifier
     title + " " + summary + " " + "Domain: #{url}"
+  end
+
+
+  def self.fetched_trainers( cnt = 3 )
+    scope = tagged_with(["fetched", "production", "classified", "to_train"])
+    result = []
+    Settings.bayes.klasses.each do |klass_name|
+      data = scope.where( :assigned_class_id => TextClass.find_by_name( klass_name ).id ).limit(cnt)
+      return nil if data.count != cnt
+      result << data.all
+    end
+    result.flatten
   end
 
 
   protected
 
 
-  def check_punycode_url
+  def convert_if_punycode_url
     url.gsub!(/xn--.+xn--p1ai/, SimpleIDN.to_unicode(url.scan(/xn--.+xn--p1ai/).first)) unless url.scan(/xn--.+xn--p1ai/).empty?
   end
 

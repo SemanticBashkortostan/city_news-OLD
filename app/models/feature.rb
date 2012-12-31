@@ -3,4 +3,9 @@ class Feature < ActiveRecord::Base
 
   has_many :text_class_features
   has_many :text_classes, :through => :text_class_features
+
+
+  def name
+    token
+  end
 end

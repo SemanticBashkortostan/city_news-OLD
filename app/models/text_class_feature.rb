@@ -15,7 +15,7 @@ class TextClassFeature < ActiveRecord::Base
     end
 
     result_hash[:docs_count] = Hash[ words_count.collect{ |text_class_feature| [text_class_feature.text_class_id, text_class_feature.feature_count] } ]
-    result_hash[:vocabolary] = Set.new( words_count.uniq.pluck(:feature_id).collect{|e| Feature.find_by_token(e).token } )
+    result_hash[:vocabolary] = Set.new( words_count.collect{|e| e.feature_id}.uniq.collect{|e| Feature.find(e).token } )
     return result_hash
   end
 end

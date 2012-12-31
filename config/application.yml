@@ -1,13 +1,13 @@
 #coding: utf-8
 defaults: &defaults
   bayes:
-    klasses: ["Уфа", "Стерлитамак", "Салават"]
-    shorten_klasses: ["ufa", "str", "slv"]
+    klasses: ["Уфа", "Стерлитамак", "Салават", "Ишимбай", "Нефтекамск"]
+    shorten_klasses: ["ufa", "str", "slv", "ish", "neft"]
     regexp:
       ufa: [ "(Уф+[[:word:]]+|УФ+[[:word:]]+|уфи+[[:word:]]+)", "Уфа" ]
       str: [ "(Стерл+[[:word:]]+|СТЕРЛ+[[:word:]]+|стерл+[[:word:]]+)", "Стерлитамак" ]
       slv: [ "(Салав+[[:word:]]+|САЛАВ+[[:word:]]+|салав+[[:word:]]+)", "Салават" ]
-      ishimbay: [ "(Ишим+[[:word:]]+|ИШИМ+[[:word:]]+|ишим+[[:word:]]+)", "Ишимбай" ]
+      ish: [ "(Ишим+[[:word:]]+|ИШИМ+[[:word:]]+|ишим+[[:word:]]+)", "Ишимбай" ]
       neft: [ "(Нефтек+[[:word:]]+|НЕФТЕК+[[:word:]]+|нефтек+[[:word:]]+)", "Нефтекамск" ]
       domain: [ "Domain:.+", "Domain" ]
 

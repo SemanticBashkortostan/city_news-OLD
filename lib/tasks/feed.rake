@@ -1,15 +1,23 @@
 #coding: utf-8
+
+rss_sources = { :ishimbay => ["http://ishimbay-news.ru/rss.xml", "http://ishimbai.procrb.ru/rss/?rss=y",
+                          "http://vestivmeste.ru/index.php/v-dvuh-slovah?format=feed&type=rss",
+                          "http://восход-ишимбай.рф/index.php?option=com_content&view=category&id=8&Itemid=598&format=feed&type=rss",
+                          "http://восход-ишимбай.рф/index.php?option=com_content&view=category&id=10&Itemid=600&format=feed&type=rss",
+                          "http://восход-ишимбай.рф/index.php?option=com_content&view=category&id=26&Itemid=601&format=feed&type=rss",
+                          "http://восход-ишимбай.рф/index.php?option=com_content&view=category&id=12&Itemid=602&format=feed&type=rss"
+                          ],
+             :salavat => ["http://slvnews.ru/rss", "http://rssportal.ru/feed/163654.xml" ],
+             :ufa => ["http://rssportal.ru/feed/129727.xml", "http://news.yandex.ru/Ufa/index.rss"],
+             :sterlitamak => ["http://rssportal.ru/feed/223350.xml", "http://sterlegrad.ru/rss.xml", "http://cityopen.ru/?feed=rss2"],
+             :neftekamsk => ["http://neftekamsk.procrb.ru/rss/?rss=y", "http://rssportal.ru/feed/240378.xml",
+                             "http://feeds.feedburner.com/delogazeta/UGfI?format=xml"],
+             :other => ["http://feeds.feedburner.com/bashinform/all?format=xml"]}
+
 namespace :training_feeds do
-  sources = { :ishimbay => ["http://ishimbay-news.ru/rss.xml", "http://ishimbai.procrb.ru/rss/?rss=y",
-                            "http://vestivmeste.ru/index.php/v-dvuh-slovah?format=feed&type=rss",
-                            "http://восход-ишимбай.рф/index.php?option=com_content&view=category&id=8&Itemid=598&format=feed&type=rss",
-                            "http://восход-ишимбай.рф/index.php?option=com_content&view=category&id=10&Itemid=600&format=feed&type=rss",
-                            "http://восход-ишимбай.рф/index.php?option=com_content&view=category&id=26&Itemid=601&format=feed&type=rss"
-                            ],
-               :salavat => ["http://slvnews.ru/rss", "http://rssportal.ru/feed/163654.xml" ],
-               :ufa => ["http://rssportal.ru/feed/129727.xml", "http://news.yandex.ru/Ufa/index.rss"],
-               :sterlitamak => ["http://rssportal.ru/feed/223350.xml", "http://sterlegrad.ru/rss.xml"],
-               :neftekamsk => ["http://neftekamsk.procrb.ru/rss/?rss=y", "http://rssportal.ru/feed/240378.xml"]}
+
+  sql_sources = {:ishimbay => "select nid, created, title, text from rb7_news where title like '%Ишимб%' order by title desc",
+                  :neftekamsk => "select nid, created, title, text from rb7_news where title like '%Нефтек%' order by title desc"}
 
 
   def create_feed entry, text_class, options={}
@@ -30,7 +38,7 @@ namespace :training_feeds do
 
   # Получаем новости с нескольких источников для одного города
   # Новости начинает выбираться со следующего источника, пока не наберется указанное количество
-  def fetch_and_create_feed(paths, city, max = 50)
+  def fetch_and_create_feed(paths, city, max = 48)
     feed = Feedzirra::Feed.fetch_and_parse( paths )
     fetched = 0
     catch (:done) do
@@ -41,36 +49,87 @@ namespace :training_feeds do
             fetched += 1
             create_feed( entry, text_class )
           end
-          throw :done if fetched >= 50
+          throw :done if fetched >= max
         end
       end
     end
   end
 
 
+  def fetch_and_create_feed_by_sql query, city, max = 12, tag="dev_test"
+    fetched = 0
+    feeds = ActiveRecord::Base.connection.execute query
+    catch(:done) do
+      feeds.each do |row|
+        fetched += 1
+        text_class = TextClass.find_by_name city
+        params = {:title => row["title"], :url => "http://www.rb7.ru/node/#{row['nid']}", :summary => row["text"],
+                  :published_at => Time.at(row["created"].to_i), :text_class => text_class, :mark_list => [tag] }
+        Feed.create params
+        throw :done if fetched >= max
+      end
+    end
+  end
+
+
   task :ishimbay => :environment do
-    fetch_and_create_feed( sources[:ishimbay], "Ишимбай" )
+    #fetch_and_create_feed( rss_sources[:ishimbay], "Ишимбай" )
+    fetch_and_create_feed_by_sql( sql_sources[:ishimbay], "Ишимбай", 9 )
   end
 
 
   task :neftekamsk => :environment do
-    fetch_and_create_feed( sources[:neftekamsk], "Нефтекамск" )
+    #fetch_and_create_feed( rss_sources[:neftekamsk], "Нефтекамск" )
+    fetch_and_create_feed_by_sql( sql_sources[:neftekamsk], "Нефтекамск", 4 )
   end
 
 
   task :salavat => :environment do
-    fetch_and_create_feed( sources[:salavat], "Салават" )
+    fetch_and_create_feed( rss_sources[:salavat], "Салават" )
   end
 
 
   task :ufa => :environment do
-    fetch_and_create_feed( sources[:ufa], "Уфа" )
+    fetch_and_create_feed( rss_sources[:ufa], "Уфа" )
   end
 
 
   task :sterlitamak => :environment do
-    fetch_and_create_feed( sources[:sterlitamak], "Стерлитамак" )
+    fetch_and_create_feed( rss_sources[:sterlitamak], "Стерлитамак" )
   end
 
+end
+
+
+namespace :production_feeds do
+  def create_production_feed entry, options = {}
+    params = {:title => entry.title, :url => entry.url, :summary => entry.summary, :published_at => entry.published,
+              :mark_list => ["fetched", "production"]}.merge( options )
+    Feed.create params
+  end
+
+
+  def production_satisfaction?(entry)
+    regexp = Regexp.new Settings.bayes.regexp.values.collect{|e| e[0]}.join("|")
+    str = entry.title + " " + entry.summary
+    not str.scan(regexp).empty?
+  end
+
+
+  task :fetch_and_classify => :environment do
+    max_fetched = 15
+    fetched = 0
+    paths = rss_sources.values.flatten
+    feed = Feedzirra::Feed.fetch_and_parse( paths )
+    paths.each do |path|
+      feed[path].entries.each do |entry|
+        create_production_feed( entry ) if production_satisfaction?( entry )
+        fetched += 1
+        break if fetched >= max_fetched
+      end
+      fetched = 0
+    end
+    Rake::Task['bayes:classify_fetched'].invoke
+  end
 end
 
