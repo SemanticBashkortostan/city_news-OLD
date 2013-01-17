@@ -1,17 +1,22 @@
-= link_to "City News", root_path, :class => 'brand'
+= link_to "Новости Башкортостана [по городам]", root_path, :class => 'brand'
 %ul.nav
-  - if user_signed_in?
-    %li
-      = link_to 'Logout', destroy_user_session_path, :method=>'delete'
-  - else
-    %li
-      = link_to 'Login', new_user_session_path
-  - if user_signed_in?
-    %li
-      = link_to 'Edit account', edit_user_registration_path
-    - if current_user.has_role? :admin
-      %li
-        = link_to 'Admin', admin_root_path
-  - else
-    %li
-      = link_to 'Sign up', new_user_registration_path
+  - TextClass.all.each do |text_class|
+    - ( params[:city] == text_class.eng_name.downcase ) ? css_class = 'active' : css_class = ''
+    %li= link_to text_class.name, feeds_city_path( :city => text_class.eng_name.downcase ), :class => css_class
+  -#%li
+  -#  = link_to 'News', feeds_path
+  -#- if user_signed_in?
+  -#  %li
+  -#    = link_to 'Logout', destroy_user_session_path, :method=>'delete'
+  -#- else
+  -#  %li
+  -#    = link_to 'Login', new_user_session_path
+  -#- if user_signed_in?
+  -#  %li
+  -#    = link_to 'Edit account', edit_user_registration_path
+  -#  - if current_user.has_role? :admin
+  -#    %li
+  -#      = link_to 'Admin', admin_root_path
+  -#- else
+  -#  %li
+  -#    = link_to 'Sign up', new_user_registration_path

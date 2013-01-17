@@ -1,0 +1,16 @@
+%h1 Новости
+
+- TextClass.all.each do |text_class|
+  - ( params[:city] == text_class.eng_name.downcase ) ? css_class = 'active' : css_class = ''
+  = link_to text_class.name, feeds_city_path( :city => text_class.eng_name.downcase ), :class => css_class
+- params[:city].blank? ? css_class = 'active' : css_class = ''
+= link_to "Все", feeds_path, :class => css_class
+
+- @grouped_feeds.each do |date, entries|
+  %h2= date
+  - entries.each do |entry|
+    =link_to entry.title, entry.url
+    %p= entry.summary
+
+
+= paginate @feeds
