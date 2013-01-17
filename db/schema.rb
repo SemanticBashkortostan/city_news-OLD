@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20121225173658) do
+ActiveRecord::Schema.define(:version => 20130117051518) do
 
   create_table "active_admin_comments", :force => true do |t|
     t.string   "resource_id",   :null => false
@@ -44,6 +44,20 @@ ActiveRecord::Schema.define(:version => 20121225173658) do
     t.datetime "updated_at",        :null => false
     t.integer  "assigned_class_id"
   end
+
+  create_table "rb7_news", :id => false, :force => true do |t|
+    t.integer "id",                        :null => false
+    t.integer "nid"
+    t.string  "title"
+    t.string  "annotation", :limit => 500
+    t.text    "text"
+    t.string  "source"
+    t.integer "created"
+    t.integer "changed"
+    t.integer "tid"
+  end
+
+  add_index "rb7_news", ["nid"], :name => "uniq_nid", :unique => true
 
   create_table "roles", :force => true do |t|
     t.string   "name"
@@ -86,6 +100,7 @@ ActiveRecord::Schema.define(:version => 20121225173658) do
     t.string   "name"
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
+    t.string   "eng_name"
   end
 
   create_table "users", :force => true do |t|
