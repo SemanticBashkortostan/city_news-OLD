@@ -1,15 +1,10 @@
 CityNews::Application.routes.draw do
   ActiveAdmin.routes(self)
 
-  authenticated :user do
-    root :to => 'home#index'
-  end
-  root :to => "home#index"
+  root :to => "feeds#index"
   devise_for :users
-  resources :users
 
-
-  match 'feeds/:city' => 'feeds#index', :as => 'feeds_city'
-  resources :feeds
+  match ':city' => 'feeds#index', :as => 'feeds_city'
+  match '/' => 'feeds#index', :as => 'feeds'
 
 end

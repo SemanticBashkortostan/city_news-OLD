@@ -1,8 +1,10 @@
 = link_to "Новости Башкортостана [по городам]", root_path, :class => 'brand'
 %ul.nav
+  - params[:city].blank? ? css_class = 'active' : css_class = ''
+  %li{:class => css_class}= link_to "Все города", feeds_path, :class => css_class
   - TextClass.all.each do |text_class|
     - ( params[:city] == text_class.eng_name.downcase ) ? css_class = 'active' : css_class = ''
-    %li= link_to text_class.name, feeds_city_path( :city => text_class.eng_name.downcase ), :class => css_class
+    %li{:class => css_class}= link_to text_class.name, feeds_city_path( :city => text_class.eng_name.downcase )
   -#%li
   -#  = link_to 'News', feeds_path
   -#- if user_signed_in?

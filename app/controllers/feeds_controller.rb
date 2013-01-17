@@ -2,7 +2,6 @@
 
 class FeedsController < ApplicationController
 
-
   def index
 
     if params[:city]
