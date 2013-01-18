@@ -103,8 +103,11 @@ end
 
 namespace :production_feeds do
   def create_production_feed entry, options = {}
-    params = {:title => entry.title, :url => entry.url, :summary => entry.summary, :published_at => entry.published,
-              :mark_list => ["fetched", "production"]}.merge( options )
+    params = {
+               :title => entry.title, :url => entry.url, :summary => entry.summary,
+               :published_at => Time.local( entry.published.year, entry.published.month, entry.published.day, entry.published.hour, entry.published.min ),
+               :mark_list => ["fetched", "production"]
+             }.merge( options )
     Feed.create params
   end
 
