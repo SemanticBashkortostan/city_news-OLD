@@ -1,4 +1,4 @@
-= link_to "Новости Башкортостана [по городам]", root_path, :class => 'brand'
+= link_to "Новости Башкортостана <i><tt><font size='3'> по городам </font></tt></i>".html_safe, root_path, :class => 'brand'
 %ul.nav
   - params[:city].blank? ? css_class = 'active' : css_class = ''
   %li{:class => css_class}= link_to "Все города", feeds_path, :class => css_class

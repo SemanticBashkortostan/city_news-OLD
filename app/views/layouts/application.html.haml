@@ -2,7 +2,7 @@
 %html
   %head
     %meta{:content => "width=device-width, initial-scale=1.0", :name => "viewport"}
-      %title= content_for?(:title) ? yield(:title) : "City News"
+      %title= content_for?(:title) ? ("Новости Башкортостана - " + yield(:title)) : "Новости Башкортостана"
       %meta{:content => content_for?(:description) ? yield(:description) : "City News", :name => "description"}
         = stylesheet_link_tag "application", :media => "all"
         = javascript_include_tag "application"
