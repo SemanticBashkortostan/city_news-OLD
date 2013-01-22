@@ -24,8 +24,8 @@
 set :cron_log, "log/cron.log"
 
 #NOTE: Development!
-set :job_template, "bash -l -c -i 'source /home/mineralka/.rvm/environments/ruby-1.9.3-p327 && :job' "
-set :environment, 'development'
+set :job_template, "bash -l -c -i 'source /home/mineralka/.rvm/environments/ruby-1.9.3-p374 && :job' "
+set :environment, 'production'
 
 every 3.minutes do
   rake "production_feeds:fetch_and_classify"
