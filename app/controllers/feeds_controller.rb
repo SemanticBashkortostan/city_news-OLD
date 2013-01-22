@@ -3,10 +3,11 @@
 class FeedsController < ApplicationController
 
   def index
-    @title = TextClass.find_by_eng_name( params[:city].capitalize ).name if params[:city]
-
     if params[:city]
-      @feeds = Feed.where( :assigned_class_id => TextClass.find_by_eng_name( params[:city].capitalize ) ).order 'published_at desc'
+      text_class = TextClass.find_by_eng_name( params[:city].capitalize )
+      @title = text_class.name if params[:city]
+      @description = "Новости #{text_class.prepositional_name}."
+      @feeds = Feed.where( :assigned_class_id => text_class ).order 'published_at desc'
     else
       @feeds = Feed.order 'published_at desc'
     end

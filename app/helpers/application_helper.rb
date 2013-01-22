@@ -5,4 +5,9 @@ module ApplicationHelper
     content_for(:title) { page_title }
   end
 
+
+  def page_description(descr)
+    content_for(:description){ descr }
+  end
+
 end

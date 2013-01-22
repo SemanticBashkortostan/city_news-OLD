@@ -1,4 +1,6 @@
 = page_title @title
+= page_description @description
+
 - @grouped_feeds.each do |date, entries|
   %h2= Russian.strftime Time.parse(date), "%a, %d %B %Y"
   - entries.each do |entry|
