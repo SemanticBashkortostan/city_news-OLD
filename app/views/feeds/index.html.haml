@@ -3,8 +3,16 @@
   %h2= Russian.strftime Time.parse(date), "%a, %d %B %Y"
   - entries.each do |entry|
     %span.city= link_to entry.assigned_class.name, feeds_city_path( :city => entry.assigned_class.eng_name.downcase ) if params[:city].blank?
-    =link_to entry.title, entry.url
+    =link_to entry.title, entry.url, :class => :entry
     %p= entry.summary
 
 
 = paginate @feeds
+
+:javascript
+  $(document).ready(function() {
+    $("a.entry").click(function(){
+      window.open($(this).attr('href'));
+      return false;
+    });
+  });
