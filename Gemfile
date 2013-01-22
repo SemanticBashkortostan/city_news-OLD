@@ -20,7 +20,7 @@ gem "simpleidn"
 gem 'whenever', :require => false
 gem 'russian'
 
-gem "naive_bayes", :path => "/home/mineralka/Dropbox/mo24a/5/Diplom/application"
+gem "naive_bayes", :git => "git://github.com/sld/naive_bayes.git"
 
 
 group :assets do
@@ -31,8 +31,10 @@ group :assets do
 end
 
 
+gem 'capistrano'
+gem 'rvm-capistrano'
 group :production do
-  gem "unicorn", ">= 4.3.1"
+  gem "passenger"
 end
 
 
