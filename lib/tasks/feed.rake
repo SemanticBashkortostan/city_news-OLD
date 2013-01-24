@@ -72,6 +72,27 @@ namespace :training_feeds do
   end
 
 
+  task :set_dev_test_and_train_feeds => :environment do
+    count80 = 56
+    count20 = 14
+    TextClass.all.each do |text_class|
+      feeds = Feed.where( :assigned_class_id =>  text_class.id ).tagged_with(["classified", "production"]).order("RANDOM()").limit(count80+count20).all
+      feeds[0...count80].each do |feed|
+        feed.text_class = text_class
+        feed.assigned_class = nil
+        feed.mark_list = ["dev_train"]
+        feed.save!
+      end
+      feeds[count80...(count80+count20)].each do |feed|
+        feed.text_class = text_class
+        feed.assigned_class = nil
+        feed.mark_list = ["dev_test"]
+        feed.save!
+      end
+    end
+  end
+
+
   task :ishimbay => :environment do
     #fetch_and_create_feed( rss_sources[:ishimbay], "Ишимбай" )
     fetch_and_create_feed_by_sql( sql_sources[:ishimbay], "Ишимбай", 9 )
