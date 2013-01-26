@@ -83,7 +83,6 @@ namespace :training_feeds do
         feed = feeds[fetched]
         if satisfaction?( feed, feed.text_class.name )
           feed.text_class = text_class
-          feed.assigned_class = nil
           feed.mark_list = ["dev_train"]
           feed.save!
           fetched += 1
@@ -93,7 +92,6 @@ namespace :training_feeds do
         feed = feeds[fetched]
         if satisfaction?( feed, feed.text_class.name )
           feed.text_class = text_class
-          feed.assigned_class = nil
           feed.mark_list = ["dev_test"]
           feed.save!
         end

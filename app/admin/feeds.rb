@@ -1,7 +1,6 @@
 ActiveAdmin.register Feed do
 
   filter :text_class
-  filter :assigned_class
   filter :taggings_tag_name, :as => :check_boxes, :collection => proc { Feed.mark_counts.map{|t| t.name} }
 
   batch_action :delete_class do |selection|
