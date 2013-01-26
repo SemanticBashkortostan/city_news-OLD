@@ -13,6 +13,20 @@ ActiveAdmin.register Feed do
   end
 
 
+  index do
+    column :id
+    column :title
+    column :url do |feed|
+      link_to feed.url, feed.url
+    end
+    column :summary
+    column :mark_list
+    column :text_class
+    column :published_at
+    column :created_at
+    default_actions
+  end
+
   form do |f|
     f.inputs
     f.inputs "Others" do
