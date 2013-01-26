@@ -1,12 +1,13 @@
 class Feed < ActiveRecord::Base
-  attr_accessible :published_at, :summary, :text_class_id, :title, :url, :text_class, :assigned_class_id, :mark_list
+  attr_accessible :published_at, :summary, :text_class_id, :title, :url, :text_class, :mark_list
 
   belongs_to :text_class
-  belongs_to :assigned_class, :class_name => 'TextClass', :foreign_key => 'assigned_class_id'
 
   acts_as_taggable_on :marks
 
   validates :url, :uniqueness => true
+
+  scope :with_text_klass, lambda{ |text_klass_id| where('text_class_id = ?', text_klass_id) }
 
   before_validation :convert_if_punycode_url
   before_save :strip_html_tags
@@ -21,7 +22,7 @@ class Feed < ActiveRecord::Base
     scope = tagged_with(["fetched", "production", "classified", "to_train"])
     result = []
     Settings.bayes.klasses.each do |klass_name|
-      data = scope.where( :assigned_class_id => TextClass.find_by_name( klass_name ).id ).limit(cnt)
+      data = scope.where( :text_class_id => TextClass.find_by_name( klass_name ).id ).limit(cnt)
       return nil if data.count != cnt
       result << data.all
     end
@@ -42,5 +43,4 @@ class Feed < ActiveRecord::Base
     self.title = ActionController::Base.helpers.strip_tags( title )
   end
 
-  # Tags: train, dev_test
 end
