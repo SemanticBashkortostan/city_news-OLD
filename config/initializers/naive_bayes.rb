@@ -3,6 +3,8 @@ module NaiveBayes
 
 
 	class NaiveBayes
+
+
     def get_features( string )
       features = []
       Settings.bayes.shorten_klasses.each do |short_name|
@@ -11,7 +13,7 @@ module NaiveBayes
         features << feature if feature
       end
       features << string.scan( Regexp.new( Settings.bayes.regexp["domain"][0] ) )[0].split("/")[2]
-      features
+      features.compact
     end
 
 
@@ -29,14 +31,22 @@ module NaiveBayes
       klass_words_count = export[:words_count]
       klass_words_count.each do |klass_id, words_count|
         words_count.each do |word, cnt|
-          text_class_feature = TextClassFeature.find_or_create_by_text_class_id_and_feature_id( klass_id, Feature.find_or_create_by_token( word ).id )
-          text_class_feature.feature_count = cnt
-          text_class_feature.save! if text_class_feature.changed?
+          begin
+            text_class_feature = TextClassFeature.find_or_create_by_text_class_id_and_feature_id( klass_id, Feature.find_or_create_by_token( word ).id )
+            text_class_feature.feature_count = cnt
+            text_class_feature.save! if text_class_feature.changed?
+          rescue Exception => e
+            str = "Error in save_to_database in naive_bayes.rb, word-#{word}, cnt-#{cnt}. Exception: #{e}"
+            p str
+            BayesLogger.bayes_logger.error str
+          end
         end
       end
-    end
-  end
 
+    end
+
+
+  end
 
 
 end

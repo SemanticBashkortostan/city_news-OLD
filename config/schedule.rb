@@ -31,6 +31,6 @@ every 3.minutes do
   rake "production_feeds:fetch_and_classify"
 end
 
-every 1.hour do
+every 10.minutes do
   rake "bayes:train_by_production_data"
 end
