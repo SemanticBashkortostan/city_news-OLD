@@ -4,18 +4,17 @@ class TextClassFeature < ActiveRecord::Base
 
 
   def self.import_to_naive_bayes
-    words_count = select( 'text_class_id, feature_id, feature_count' ).
-                  where(:text_class_id => TextClass.where( :name => Settings.bayes.klasses ) ).
+    words_count = TextClassFeature.where(:text_class_id => TextClass.where( :name => Settings.bayes.klasses ) ).
                   where('feature_count IS NOT NULL')
 
     result_hash = { :docs_count => {}, :words_count => {}, :vocabolary => {} }
     words_count.each do |text_class_feature|
       result_hash[:words_count][text_class_feature.text_class_id] ||= {}
-      result_hash[:words_count][text_class_feature.text_class_id][Feature.find(text_class_feature.feature_id).token] = text_class_feature.feature_count
+      result_hash[:words_count][text_class_feature.text_class_id][text_class_feature.feature.token] = text_class_feature.feature_count
     end
 
-    result_hash[:docs_count] = Hash[ words_count.collect{ |text_class_feature| [text_class_feature.text_class_id, text_class_feature.feature_count] } ]
-    result_hash[:vocabolary] = Set.new( words_count.collect{|e| e.feature_id}.uniq.collect{|e| Feature.find(e).token } )
+    result_hash[:docs_count] = Hash[ TextClass.all.collect{ |text_class| [ text_class.id, text_class.feeds.tagged_with(["dev_train", "was_trainer"], :any => true).count ] } ]
+    result_hash[:vocabolary] = Set.new( words_count.uniq.pluck(:feature_id).map{|feature_id| Feature.find(feature_id).token } )
     return result_hash
   end
 end
