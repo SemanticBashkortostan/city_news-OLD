@@ -11,7 +11,7 @@ namespace :bayes do
   task :init_train => :environment do
     @nb = NaiveBayes::NaiveBayes.new
     text_classes = TextClass.where :name => Settings.bayes.klasses
-    train_data = Feed.tagged_with("train").where( :text_class_id => text_classes  )
+    train_data = Feed.tagged_with("dev_train").where( :text_class_id => text_classes  )
 
     train_data.each do |feed|
       @nb.train feed.string_for_classifier, feed.text_class_id
@@ -40,7 +40,7 @@ namespace :bayes do
       classified = TextClass.find(nb_classfied[:class]).name
       confusion_matrix[feed.text_class.name] ||= {}
       confusion_matrix[feed.text_class.name][classified] = confusion_matrix[feed.text_class.name][classified].to_i + 1
-      p [feed.text_class.name, feed.title, classified, nb_classfied[:value]]
+      p [feed.text_class.name, feed.title, feed.summary, classified, nb_classfied[:value]]
     end
     accuracy = accuracy( confusion_matrix )
     p confusion_matrix
@@ -82,7 +82,7 @@ namespace :bayes do
         tag_list << "to_train"
       end
       feed.mark_list += tag_list
-      feed.assigned_class = TextClass.find nb_classified[:class]
+      feed.text_class = TextClass.find nb_classified[:class]
       feed.save!
     end
   end
@@ -95,7 +95,7 @@ namespace :bayes do
     @nb.import!( nb_data[:docs_count], nb_data[:words_count], nb_data[:vocabolary]  )
 
     Feed.fetched_trainers.each do |feed|
-      @nb.train( feed.string_for_classifier, feed.assigned_class_id )
+      @nb.train( feed.string_for_classifier, feed.text_class_id )
       feed.mark_list.delete("to_train")
       feed.mark_list << "was_trainer"
       feed.save

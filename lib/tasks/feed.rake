@@ -13,6 +13,8 @@ rss_sources = { :ishimbay => ["http://ishimbay-news.ru/rss.xml", "http://ishimba
              :neftekamsk => ["http://neftekamsk.procrb.ru/rss/?rss=y", "http://rssportal.ru/feed/240378.xml",
                              "http://feeds.feedburner.com/delogazeta/UGfI?format=xml"],
              :other => ["http://feeds.feedburner.com/bashinform/all?format=xml"]}
+count80 = 56
+count20 = 14
 
 namespace :training_feeds do
 
@@ -72,22 +74,41 @@ namespace :training_feeds do
   end
 
 
+  desc "Setting dev test and dev train tags for fetched feeds"
   task :set_dev_test_and_train_feeds => :environment do
-    count80 = 56
-    count20 = 14
+    fetched = 0
     TextClass.all.each do |text_class|
-      feeds = Feed.where( :assigned_class_id =>  text_class.id ).tagged_with(["classified", "production"]).order("RANDOM()").limit(count80+count20).all
-      feeds[0...count80].each do |feed|
-        feed.text_class = text_class
-        feed.assigned_class = nil
-        feed.mark_list = ["dev_train"]
-        feed.save!
+      feeds = Feed.where( :text_class_id =>  text_class.id ).tagged_with(["classified", "production"]).order("RANDOM()").all
+      while fetched <= count80 && feeds.count > fetched do
+        feed = feeds[fetched]
+        if satisfaction?( feed, feed.text_class.name )
+          feed.text_class = text_class
+          feed.assigned_class = nil
+          feed.mark_list = ["dev_train"]
+          feed.save!
+          fetched += 1
+        end
       end
-      feeds[count80...(count80+count20)].each do |feed|
-        feed.text_class = text_class
-        feed.assigned_class = nil
-        feed.mark_list = ["dev_test"]
-        feed.save!
+      while fetched <= (count80 + count20) && feeds.count > fetched
+        feed = feeds[fetched]
+        if satisfaction?( feed, feed.text_class.name )
+          feed.text_class = text_class
+          feed.assigned_class = nil
+          feed.mark_list = ["dev_test"]
+          feed.save!
+        end
+      end
+    end
+  end
+
+
+  desc "Checking dev test and dev train feeds by cities regexp"
+  task :check_devs_by_regexp => :environment do
+    p ["dev_test_count is not true"] if Feed.tagged_with("dev_test").count != count20 * TextClass.count
+    p ["dev_train_count is not true"] if Feed.tagged_with("dev_train").count != count80 * TextClass.count
+    Feed.tagged_with(["dev_test", "dev_train"], :any => true).all.each do |feed|
+      if not satisfaction?( feed.text_class.name, feed )
+        p ["is not satisfaction", feed]
       end
     end
   end
