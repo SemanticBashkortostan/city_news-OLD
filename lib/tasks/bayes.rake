@@ -89,6 +89,11 @@ namespace :bayes do
 
 
   task :train_by_production_data => :environment do
+    train_by_production_data  
+  end
+
+
+  def train_by_production_data
     return nil if Feed.fetched_trainers.nil?
     @nb = NaiveBayes::NaiveBayes.new
     nb_data = TextClassFeature.import_to_naive_bayes
@@ -101,7 +106,7 @@ namespace :bayes do
       feed.save
     end
 
-    @nb.save_to_database
+    @nb.save_to_database  
   end
 
 
