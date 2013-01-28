@@ -39,8 +39,10 @@ class Feed < ActiveRecord::Base
 
 
   def strip_html_tags
-    self.summary = ActionController::Base.helpers.strip_tags( summary )
-    self.title = ActionController::Base.helpers.strip_tags( title )
+    str = ActionController::Base.helpers.strip_tags( summary )
+    self.summary = str.html_safe
+    str = ActionController::Base.helpers.strip_tags( title )
+    self.title = str.html_safe
   end
 
 end
