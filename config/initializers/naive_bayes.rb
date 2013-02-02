@@ -10,9 +10,13 @@ module NaiveBayes
       Settings.bayes.shorten_klasses.each do |short_name|
         regexp_hash = { :regexp => Regexp.new( Settings.bayes.regexp[short_name][0] ), :name => Settings.bayes.regexp[short_name][1] }
         feature = scan( string, regexp_hash  )
-        features += feature if feature
+        if feature
+          features += feature          
+        end
       end
-      features << string.scan( Regexp.new( Settings.bayes.regexp["domain"][0] ) )[0].split("/")[2]
+
+      domain = string.scan( Regexp.new( Settings.bayes.regexp["domain"][0] ) )
+      features << domain[0].split("/")[2] unless domain.empty?        
       features.compact
     end
 
@@ -22,6 +26,8 @@ module NaiveBayes
     end
 
 
+    # Возвращает массив feature с количеством повторений в строке.
+    # Например, ["Уфа", "Уфа"]
     def scan string, regexp_hash
       matched = string.scan( regexp_hash[:regexp] )
       unless matched.empty?

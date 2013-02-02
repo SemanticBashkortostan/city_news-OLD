@@ -40,7 +40,7 @@ namespace :bayes do
       classified = TextClass.find(nb_classfied[:class]).name
       confusion_matrix[feed.text_class.name] ||= {}
       confusion_matrix[feed.text_class.name][classified] = confusion_matrix[feed.text_class.name][classified].to_i + 1
-      p [feed.text_class.name, feed.title, feed.summary, classified, nb_classfied[:value]]
+      p [feed.text_class.name, feed.title, feed.summary, classified, nb_classfied[:value]] if feed.text_class.name == "Уфа"
     end
     accuracy = accuracy( confusion_matrix )
     p confusion_matrix
