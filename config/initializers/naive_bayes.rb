@@ -11,7 +11,8 @@ module NaiveBayes
         regexp_hash = { :regexp => Regexp.new( Settings.bayes.regexp[short_name][0] ), :name => Settings.bayes.regexp[short_name][1] }
         feature = scan( string, regexp_hash  )
         if feature
-          features += feature          
+          features += feature 
+          string.gsub! regexp_hash[:regexp], feature.first         
         end
       end
 
