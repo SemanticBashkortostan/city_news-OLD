@@ -5,6 +5,10 @@ module NaiveBayes
 	class NaiveBayes
 
 
+    # Находим features у строки. В конфигурационном файле хранится отображение regexp на название feature
+    # Если feature найден, то он заменяется на отображение regexp на название feature. 
+    # Например, "В Уфе есть клуб Салват Юлаев" --> "В Уфа есть клуб Уфа"
+    # Это сделано чтобы не было конфликтов с другими regexp в городах( например, Салават Юлаев )
     def get_features( string )
       features = []
       Settings.bayes.shorten_klasses.each do |short_name|
