@@ -142,7 +142,7 @@ end
 
 
 namespace :production_feeds do
-  def create_production_feed entry, options = {}
+  def create_production_feed entry, options = {}    
     params = {
                :title => entry.title, :url => entry.url, :summary => entry.summary,
                :published_at => Time.local( entry.published.year, entry.published.month, entry.published.day, entry.published.hour, entry.published.min ),
@@ -166,8 +166,14 @@ namespace :production_feeds do
     feed = Feedzirra::Feed.fetch_and_parse( paths )
     paths.each do |path|
       feed[path].entries.each do |entry|
-        create_production_feed( entry ) if production_satisfaction?( entry )
-        fetched += 1
+        begin
+          if production_satisfaction?( entry )
+            create_production_feed( entry ) 
+            fetched += 1
+          end
+        rescue Exception => e
+          BayesLogger.bayes_logger.error ["Error in production_feeds:fetch_and_classify #{entry}, #{path}", e]
+        end
         break if fetched >= max_fetched
       end
       fetched = 0
