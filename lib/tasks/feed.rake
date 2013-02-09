@@ -164,17 +164,17 @@ namespace :production_feeds do
     fetched = 0
     paths = rss_sources.values.flatten
     feed = Feedzirra::Feed.fetch_and_parse( paths )
-    paths.each do |path|
-      feed[path].entries.each do |entry|
-        begin
+    paths.each do |path|      
+      begin
+        feed[path].entries.each do |entry|
           if production_satisfaction?( entry )
             create_production_feed( entry ) 
             fetched += 1
-          end
-        rescue Exception => e
-          BayesLogger.bayes_logger.error ["Error in production_feeds:fetch_and_classify #{entry}, #{path}", e]
+          end        
         end
         break if fetched >= max_fetched
+      rescue Exception => e
+        BayesLogger.bayes_logger.error ["Error in production_feeds:fetch_and_classify #{entry}, #{path}", e]
       end
       fetched = 0
     end
