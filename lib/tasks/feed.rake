@@ -170,11 +170,11 @@ namespace :production_feeds do
           if production_satisfaction?( entry )
             create_production_feed( entry ) 
             fetched += 1
-          end        
-        end
-        break if fetched >= max_fetched
+          end 
+          break if fetched >= max_fetched       
+        end        
       rescue Exception => e
-        BayesLogger.bayes_logger.error ["Error in production_feeds:fetch_and_classify #{entry}, #{path}", e]
+        BayesLogger.bayes_logger.error ["Error in production_feeds:fetch_and_classify #{path}", e]
       end
       fetched = 0
     end
