@@ -2,6 +2,7 @@
 %html
   %head
     %meta{:content => "width=device-width, initial-scale=1.0", :name => "viewport"}
+    %meta{:name => 'yandex-verification', :content => '7532159077e96540' }
     %title= content_for?(:title) ? ("Новости Башкортостана - " + yield(:title)) : "Новости Башкортостана"
     %meta{:content => "Новости Башкортостана, #{TextClass.all.collect{|e| e.name}.join(', ')}", :name => "keywords"}
     - default_descr = "Агрегатор новостей Башкортостана по городам из разных источников. "
