@@ -5,12 +5,13 @@ class Feed < ActiveRecord::Base
 
   acts_as_taggable_on :marks
 
-  validates :url, :uniqueness => true
+  validates :url, :uniqueness => true  
 
   scope :with_text_klass, lambda{ |text_klass_id| where('text_class_id = ?', text_klass_id) }
 
   before_validation :convert_if_punycode_url
   before_save :strip_html_tags
+  before_save :set_default_published_at
 
 
   def string_for_classifier
@@ -43,6 +44,11 @@ class Feed < ActiveRecord::Base
     self.summary = str.html_safe
     str = ActionController::Base.helpers.strip_tags( title )
     self.title = str.html_safe
+  end
+
+
+  def set_default_published_at
+    self.published_at ||= Time.now - 30.minutes
   end
 
 end
