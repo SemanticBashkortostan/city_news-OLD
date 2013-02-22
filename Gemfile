@@ -21,6 +21,9 @@ gem 'whenever', :require => false
 gem 'russian'
 gem 'exception_notification'
 
+
+gem 'sitemap_generator'
+
 gem "naive_bayes", :git => "git://github.com/sld/naive_bayes.git"
 
 

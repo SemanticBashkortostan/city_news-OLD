@@ -264,6 +264,8 @@ GEM
       activemodel (~> 3.0)
     simple_oauth (0.1.9)
     simpleidn (0.0.4)
+    sitemap_generator (3.4)
+      builder
     sprockets (2.2.2)
       hike (~> 1.2)
       multi_json (~> 1.0)
@@ -341,6 +343,7 @@ DEPENDENCIES
   settingslogic
   simple_form (>= 2.0.4)
   simpleidn
+  sitemap_generator
   therubyracer (>= 0.10.2)
   uglifier (>= 1.0.3)
   whenever
