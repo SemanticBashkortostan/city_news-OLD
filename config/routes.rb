@@ -4,6 +4,8 @@ CityNews::Application.routes.draw do
   root :to => "feeds#index"
   devise_for :users
 
+  match '/about' => 'application#about'
+
   match '/goto' => 'feeds#goto', :as => 'feeds_goto'
   match ':city' => 'feeds#index', :as => 'feeds_city'
   match '/' => 'feeds#index', :as => 'feeds'

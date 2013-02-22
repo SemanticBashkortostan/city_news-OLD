@@ -16,6 +16,11 @@ class ApplicationController < ActionController::Base
   end
 
 
+  def about
+    render "pages/about"
+  end
+
+
   private
 
 

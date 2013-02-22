@@ -9,6 +9,7 @@
     %meta{:content => content_for?(:description) ? (default_descr + yield(:description)) : default_descr, :name => "description"}
     = stylesheet_link_tag "application", :media => "all"
     = javascript_include_tag "application"
+    %script{:src => "https://apis.google.com/js/plusone.js", :type => "text/javascript"}
     = csrf_meta_tags
     = yield(:head)
     :javascript
@@ -27,17 +28,18 @@
         .container
           = render 'layouts/navigation'
     #main{:role => "main"}
-      .container
-        .content
-          .row
-            .span12
-              = render 'layouts/messages'
-              = yield
-          %footer
-            %div{ :align => "center" }
-              %a.feedback{ :href => "mailto:rbcitiesnews@gmail.com" } Обратная связь
-              %br
-              %script{:src => "https://apis.google.com/js/plusone.js", :type => "text/javascript"}
-              %g:plusone{ :href => "http://www.rbcitynews.ru" }
+      .container      
+        .row
+          .span9.content
+            = render 'layouts/messages'
+            = yield
+          .span2
+            %ul{ :class => "nav nav-list" }
+              %li 
+                %g:plusone{ :href => "http://www.rbcitynews.ru" }       
+              %li
+                = link_to "О сайте", about_path       
+              %li
+                %a.feedback{ :href => "mailto:rbcitiesnews@gmail.com" } Обратная связь                
       / ! end of .container
     / ! end of #main
