@@ -1,6 +1,8 @@
 CityNews::Application.routes.draw do
   ActiveAdmin.routes(self)
 
+  mount Feedbacks::Engine, :at => "/", :as => "feedbacks" 
+
   root :to => "feeds#index"
   devise_for :users
 

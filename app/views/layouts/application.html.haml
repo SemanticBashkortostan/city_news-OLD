@@ -40,6 +40,8 @@
               %li
                 = link_to "О сайте", about_path       
               %li
-                %a.feedback{ :href => "mailto:rbcitiesnews@gmail.com" } Обратная связь                
+                %div{ :id => 'feedback-form', :title => "Сообщение" }                
+                = link_to "Обратная связь", feedbacks.feedback_path, :remote => true, :class => 'feedback'
       / ! end of .container
     / ! end of #main
+    .ajaxmodal
