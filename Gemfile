@@ -6,6 +6,7 @@ gem 'pg'
 gem 'activeadmin'
 
 gem 'jquery-rails'
+
 gem "haml", ">= 3.1.7"
 gem "bootstrap-sass", ">= 2.1.1.0"
 gem "devise", ">= 2.1.2"
@@ -25,6 +26,8 @@ gem 'exception_notification'
 gem 'sitemap_generator'
 
 gem "naive_bayes", :git => "git://github.com/sld/naive_bayes.git"
+
+gem "feedbacks", :git => "git@techinform-ufa.ru:gems/feedbacks"
 
 
 group :assets do
