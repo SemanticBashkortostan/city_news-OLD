@@ -1,17 +1,17 @@
 GIT
-  remote: git://github.com/sld/naive_bayes.git
-  revision: b5984a5f1a89148a23c26f80558eb9ab965f32b7
-  specs:
-    naive_bayes (0.0.1)
-
-GIT
-  remote: git@techinform-ufa.ru:gems/feedbacks
-  revision: 1e9fdf7d15e019462d923dbf8fa8ce487ec17796
+  remote: git://github.com/sld/feedbacks.git
+  revision: 48bf44a1710029f1f9c6649bd6991cd48dd91ff5
   specs:
     feedbacks (0.0.1)
       jquery-rails
       jquery-ui-rails
       rails (~> 3.2.8)
+
+GIT
+  remote: git://github.com/sld/naive_bayes.git
+  revision: b5984a5f1a89148a23c26f80558eb9ab965f32b7
+  specs:
+    naive_bayes (0.0.1)
 
 GEM
   remote: https://rubygems.org/

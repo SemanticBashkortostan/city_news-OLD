@@ -27,7 +27,7 @@ gem 'sitemap_generator'
 
 gem "naive_bayes", :git => "git://github.com/sld/naive_bayes.git"
 
-gem "feedbacks", :git => "git@techinform-ufa.ru:gems/feedbacks"
+gem "feedbacks", :git => "git://github.com/sld/feedbacks.git"
 
 
 group :assets do
