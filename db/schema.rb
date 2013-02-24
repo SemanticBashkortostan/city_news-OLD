@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20130126134123) do
+ActiveRecord::Schema.define(:version => 20130224152923) do
 
   create_table "active_admin_comments", :force => true do |t|
     t.string   "resource_id",   :null => false
@@ -33,6 +33,15 @@ ActiveRecord::Schema.define(:version => 20130126134123) do
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
   end
+
+  create_table "feed_sources", :force => true do |t|
+    t.integer  "text_class_id"
+    t.string   "url"
+    t.datetime "created_at",    :null => false
+    t.datetime "updated_at",    :null => false
+  end
+
+  add_index "feed_sources", ["text_class_id"], :name => "index_feed_sources_on_text_class_id"
 
   create_table "feeds", :force => true do |t|
     t.string   "title"
