@@ -1,0 +1,7 @@
+ru:
+  activerecord:      
+    attributes:
+      feedbacks/feedback:
+        topic: Тема
+        text: Текст
+        email: Ваш email
