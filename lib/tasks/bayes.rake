@@ -50,22 +50,6 @@ namespace :bayes do
   end
 
 
-  task :test_with_regexp => :environment do
-    cities_names = Settings.bayes.klasses
-    cities = TextClass.where :name => cities_names
-    @test_data  = Feed.tagged_with("dev_test").where( :text_class_id => cities )
-
-    confusion_matrix = {}
-    @test_data.each do |feed|
-      classified = classify_with_regexp( feed.summary + feed.title )
-      confusion_matrix[feed.text_class.name] ||= {}
-      confusion_matrix[feed.text_class.name][classified] = confusion_matrix[feed.text_class.name][classified].to_i + 1
-    end
-    p confusion_matrix
-    p accuracy(confusion_matrix)
-
-  end
-
 
   task :classify_fetched => :environment do
     @nb = NaiveBayes::NaiveBayes.new
@@ -110,10 +94,34 @@ namespace :bayes do
   end
 
 
+
+
+
+
+  #--------------------------------
+  #-------To Delete Section--------
+  #--------------------------------
+
+  task :test_with_regexp => :environment do
+    cities_names = Settings.bayes.klasses
+    cities = TextClass.where :name => cities_names
+    @test_data  = Feed.tagged_with("dev_test").where( :text_class_id => cities )
+
+    confusion_matrix = {}
+    @test_data.each do |feed|
+      classified = classify_with_regexp( feed.summary + feed.title )
+      confusion_matrix[feed.text_class.name] ||= {}
+      confusion_matrix[feed.text_class.name][classified] = confusion_matrix[feed.text_class.name][classified].to_i + 1
+    end
+    p confusion_matrix
+    p accuracy(confusion_matrix)
+
+  end
+
+
   def classify_with_regexp( string )
-    Settings.bayes.shorten_klasses.each do |short_name|
-      regexp_arr = Settings.bayes.regexp["short_name"]
-      return regexp_arr[1] unless string.scan( Regexp.new( regexp_arr[0] ) ).blank?
+    Settings.bayes.klasses.each do |klass_name|
+      return klass_name unless string.scan( Regexp.new( Settings.bayes.regexp[klass_name] ) ).blank?
     end
   end
 

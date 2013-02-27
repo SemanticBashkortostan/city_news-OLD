@@ -11,8 +11,9 @@ module NaiveBayes
     # Это сделано чтобы не было конфликтов с другими regexp в городах( например, Салават Юлаев )
     def get_features( string )
       features = []
-      Settings.bayes.shorten_klasses.each do |short_name|
-        regexp_hash = { :regexp => Regexp.new( Settings.bayes.regexp[short_name][0] ), :name => Settings.bayes.regexp[short_name][1] }
+      text_class_names = TextClass.where( :id => @klass_docs_count.keys ).pluck(:name)
+      text_class_names.each do |tc_name|
+        regexp_hash = { :regexp => Regexp.new( Settings.bayes.regexp[tc_name] ), :name => tc_name }
         feature = scan( string, regexp_hash  )
         if feature
           features += feature 
