@@ -8,7 +8,7 @@ class CreateClassifierTextClassFeatureProperties < ActiveRecord::Migration
       t.timestamps
     end
 
-    add_index :classifier_text_class_feature_properties, [:classifier_id, :text_class_feature_id]
+    add_index :classifier_text_class_feature_properties, [:classifier_id, :text_class_feature_id], :name => :classifier_tcf_prop_ind
   end
 
 
