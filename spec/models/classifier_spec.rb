@@ -132,4 +132,50 @@ describe Classifier do
   end
 
 
+  context "Work with Classifier's klasses" do
+    it "should extract text_class from classifier with text_class_features and feature properties" do
+
+    end
+
+
+    context "TextClass" do
+      def make_text_classes_with_feeds
+        @text_class1 = TextClass.create! :name => :c
+        @text_class2 = TextClass.create! :name => :j
+        @train_data = [
+                                  ["Chinese Beijing Chinese", :c],
+                                  ["Chinese Chinese Shanghai", :c],
+                                  ["Chinese Macao", :c],
+                                  ["Tokyo Japan Chinese", :j]
+                      ]
+        @test_data = ["Chinese Chinese Chinese Tokyo Japan"]
+
+        @train_data.each do |(str , klass)|
+          Feed.create! :summary => str, :text_class_id => TextClass.find_by_name(klass).id, :url => "url#{str.object_id}", :mark_list => ["test_train"]
+        end
+      end
+
+      it "should show that TextClass have require data" do
+        pending
+      end
+
+
+      it "should make Classifier from TextClasses" do
+        make_text_classes_with_feeds
+        Classifier.make_from_text_classes( [ @text_class1, @text_class2 ], :name => Classifier::NAIVE_BAYES_NAME )
+        Classifier.count.should == 1
+        classifier = Classifier.first
+        classifier.preload_classifier
+        classifier.classify( @test_data[0] )[:class].should == TextClass.find_by_name(:c).id
+      end
+    end
+
+
+    it "should make new Classifier from extracted klass" do
+
+    end
+
+  end
+
+
 end
