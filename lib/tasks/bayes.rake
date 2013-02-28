@@ -25,7 +25,7 @@ namespace :bayes do
     @nb = NaiveBayes::NaiveBayes.new
     cities_names = Settings.bayes.klasses
     cities = TextClass.where :name => cities_names
-    @train_data = Feed.tagged_with("dev_train").where( :text_class_id => cities  )
+    @train_data = Feed.tagged_with("dev_train").where( :text_class_id => cities )
     @test_data  = Feed.tagged_with("dev_test").where( :text_class_id => cities )
 
     @train_data.each do |feed|
