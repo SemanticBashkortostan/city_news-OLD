@@ -5,5 +5,5 @@ class TextClass < ActiveRecord::Base
 
   has_many :text_class_features
   has_many :features, :through => :text_class_features
-  has_one :feed_source
+  has_many :feed_sources
 end

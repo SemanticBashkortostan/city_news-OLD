@@ -5,7 +5,8 @@ class Feed < ActiveRecord::Base
 
   acts_as_taggable_on :marks
 
-  validates :url, :uniqueness => true  
+  validates :url, :uniqueness => true
+  validate :summary_or_title_presence
 
   scope :with_text_klass, lambda{ |text_klass_id| where('text_class_id = ?', text_klass_id) }
 
@@ -15,7 +16,7 @@ class Feed < ActiveRecord::Base
 
 
   def string_for_classifier
-    title + " " + summary + " " + "Domain: #{url}"
+    title.to_s + " " + summary.to_s + " " + "Domain: #{url}"
   end
 
 
@@ -34,16 +35,26 @@ class Feed < ActiveRecord::Base
   protected
 
 
+  def summary_or_title_presence
+    errors.add(:base, "Title and summary is not exist") if summary.blank? && title.blank?
+  end
+
+
   def convert_if_punycode_url
     url.gsub!(/xn--.+xn--p1ai/, SimpleIDN.to_unicode(url.scan(/xn--.+xn--p1ai/).first)) unless url.scan(/xn--.+xn--p1ai/).empty?
   end
 
 
   def strip_html_tags
-    str = ActionController::Base.helpers.strip_tags( summary )
-    self.summary = str.html_safe
-    str = ActionController::Base.helpers.strip_tags( title )
-    self.title = str.html_safe
+    if summary.present?
+      str = ActionController::Base.helpers.strip_tags( summary )
+      self.summary = str.html_safe
+    end
+
+    if title.present?
+      str = ActionController::Base.helpers.strip_tags( title )
+      self.title = str.html_safe
+    end
   end
 
 
