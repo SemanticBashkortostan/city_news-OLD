@@ -1,6 +1,7 @@
 class Classifier < ActiveRecord::Base
   NAIVE_BAYES_NAME = "NaiveBayes"
   SVM_NAME = "SVM"
+  TRAIN_TAGS = ["test_train", "dev_train", "was_trainer"]
 
   attr_accessible :name
 
@@ -8,17 +9,28 @@ class Classifier < ActiveRecord::Base
   has_many :text_class_features, :through => :classifier_text_class_feature_properties
 
 
-  def train str, klass_str
-    if name[NAIVE_BAYES_NAME]
-      naive_bayes_train( str, klass_str )
+  def train str, klass
+    case klass
+      when String
+        klass_id = TextClass.find_by_name(klass).id
+      when Symbol
+        klass_id = TextClass.find_by_name(klass).id
+      when TextClass
+        klass_id = klass.id
+      else
+        raise ArgumentError
+    end
+
+    if is_naive_bayes?
+      naive_bayes_train( str, klass_id )
     elsif name[SVM_NAME]
-      svm_train( str, klass_str )
+      svm_train( str, klass_id )
     end
   end
 
 
   def classify str
-    if name[NAIVE_BAYES_NAME]
+    if is_naive_bayes?
       naive_bayes_classify( str )
     elsif name =~ SVM_NAME
       svm_classify( str )
@@ -28,7 +40,7 @@ class Classifier < ActiveRecord::Base
 
   def save_to_database!
 
-    if name[NAIVE_BAYES_NAME]
+    if is_naive_bayes?
       save_naive_bayes
     end
 
@@ -37,7 +49,7 @@ class Classifier < ActiveRecord::Base
 
   # Один раз выгружаем из БД данные о классификаторе( features, klasses, feature properties )
   def preload_classifier( options = {} )
-    if name[NAIVE_BAYES_NAME]
+    if is_naive_bayes?
       preload_naive_bayes options
     end
   end
@@ -48,6 +60,41 @@ class Classifier < ActiveRecord::Base
   end
 
 
+  def self.make_from_text_classes( text_klasses, options = {} )
+    raise ArgumentError if text_klasses.blank? || options[:name].blank?
+
+    classifier = Classifier.create! :name => options[:name]
+    classifier.preload_classifier
+    training_feeds = classifier.get_training_feeds(text_klasses)
+    training_feeds.each do |text_klass, feeds|
+      feeds.each do |feed|
+        classifier.train( feed.string_for_classifier, text_klass )
+      end
+    end
+    classifier.save_to_database!
+  end
+
+
+  # Select feeds equal by count for NaiveBayes
+  # Returns { TextClass => selected_feeds }
+  def get_training_feeds( text_klasses )
+    training_feeds_hash = {}
+    text_klasses.each do |text_klass|
+      training_feeds_hash[text_klass] = text_klass.feeds.tagged_with( TRAIN_TAGS, :any => true )
+    end
+
+    feeds_counts = training_feeds_hash.values.collect{|e| e.count}
+    if is_naive_bayes? && (feeds_counts.min != feeds_counts.max)
+      min_count = feeds_counts.min
+      training_feeds_hash.each do |k, v|
+        training_feeds_hash[k] = v[0...min_count]
+      end
+    end
+
+    return training_feeds_hash
+  end
+
+
 
   private
 
@@ -55,6 +102,10 @@ class Classifier < ActiveRecord::Base
 
   #------------- Naive Bayes Section -------------
   #-----------------------------------------------
+
+  def is_naive_bayes?
+    not name[NAIVE_BAYES_NAME].nil?
+  end
 
 
   def preload_naive_bayes options
@@ -84,8 +135,8 @@ class Classifier < ActiveRecord::Base
   end
 
 
-  def naive_bayes_train( str, klass_str )
-    @nb.train( str, TextClass.find_by_name( klass_str ).id )
+  def naive_bayes_train( str, klass_id )
+    @nb.train( str, klass_id )
   end
 
 
