@@ -22,7 +22,9 @@ module NaiveBayes
       end
 
       domain = string.scan( Regexp.new( Settings.bayes.regexp["domain"][0] ) )
-      features << domain[0].split("/")[2] unless domain.empty?        
+      features << domain[0].split("/")[2] unless domain.empty?
+
+      raise "get_features - Features for NaiveBayes is empty!" if features.empty?
       features.compact
     end
 

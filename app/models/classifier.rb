@@ -38,12 +38,17 @@ class Classifier < ActiveRecord::Base
   end
 
 
-  def save_to_database!
+  def extract_class!( text_class )
+    ClassifierTextClassFeatureProperty.where( :classifier_id => self.id, :text_class_feature_id => self.text_class_features.where( :text_class_id => text_class ) ).destroy_all
+    rebuild_classifier
+    save_to_database!
+  end
 
+
+  def save_to_database!
     if is_naive_bayes?
       save_naive_bayes
     end
-
   end
 
 
@@ -72,10 +77,13 @@ class Classifier < ActiveRecord::Base
       end
     end
     classifier.save_to_database!
+
+    classifier.preload_classifier
+    return classifier
   end
 
 
-  # Select feeds equal by count for NaiveBayes
+  # Select feeds. It will be equal by count for NaiveBayes.
   # Returns { TextClass => selected_feeds }
   def get_training_feeds( text_klasses )
     training_feeds_hash = {}
@@ -98,6 +106,16 @@ class Classifier < ActiveRecord::Base
 
   private
 
+
+
+  def rebuild_classifier
+    @nb = NaiveBayes::NaiveBayes.new if is_naive_bayes?
+    get_training_feeds( text_classes ).each do |tc, feeds|
+      feeds.each do |feed|
+        train( feed.string_for_classifier, tc )
+      end
+    end
+  end
 
 
   #------------- Naive Bayes Section -------------
@@ -135,13 +153,22 @@ class Classifier < ActiveRecord::Base
   end
 
 
+  def naive_bayes_filter? str
+    return true if Rails.env == "test"
+    text_classes.pluck(:name).each do |tc_name|
+      return true if str =~ Settings.bayes.regexp(tc_name)
+    end
+    return false
+  end
+
+
   def naive_bayes_train( str, klass_id )
-    @nb.train( str, klass_id )
+    @nb.train( str, klass_id ) if naive_bayes_filter?( str )
   end
 
 
   def naive_bayes_classify( str )
-    @nb.classify str
+    @nb.classify( str ) if naive_bayes_filter?( str )
   end
 
 

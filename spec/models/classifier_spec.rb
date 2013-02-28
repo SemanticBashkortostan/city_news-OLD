@@ -11,23 +11,63 @@ describe Classifier do
   end
 
 
-  context "NaiveBayes" do
-    before :each do
-      @train_data = [
-                          ["Chinese Beijing Chinese", :c],
-                          ["Chinese Chinese Shanghai", :c],
-                          ["Chinese Macao", :c],
-                          ["Tokyo Japan Chinese", :j]
-                    ]
-      @features = @train_data.collect{|e| e.first.split(" ")}.flatten.uniq.sort
-      @test_data = ["Chinese Chinese Chinese Tokyo Japan"]
+  def initialize_two_klass_case
+    @train_data = [
+                              ["Chinese Beijing Chinese", :c],
+                              ["Chinese Chinese Shanghai", :c],
+                              ["Chinese Macao", :c],
+                              ["Tokyo Japan Chinese", :j]
+                        ]
+    @features = @train_data.collect{|e| e.first.split(" ")}.flatten.uniq.sort
+    @test_data = ["Chinese Chinese Chinese Tokyo Japan"]
 
+    @text_class1 = TextClass.create! :name => :c
+    @text_class2 = TextClass.create! :name => :j
+  end
+
+
+  def initialize_three_klass_case
+    @train_data1 = [
+                        ["Chinese Beijing Chinese", :c],
+                        ["Chinese Chinese Shanghai", :c],
+                        ["Chinese Macao", :c],
+                        ["Tokyo Japan Chinese", :j]
+                   ]
+
+    @train_data2 = [
+                        ["Chinese Beijing Chinese", :c],
+                        ["Chinese Chinese Shanghai", :c],
+                        ["Chinese Macao", :c],
+                        ["Chinese Macao", :c],
+                        ["Tokyo Japan Chinese", :j],
+                        ["Chinese Tokyo Japan Aizu", :j],
+                        ["Moscow Ufa Tokyo", :r]
+                   ]
+    @features = (@train_data1 + @train_data2).collect{|e| e.first.split(" ")}.flatten.uniq.sort
+    @test_data = ["Chinese Chinese Chinese Tokyo Japan"]
+
+    @text_class1 = TextClass.create! :name => :c
+    @text_class2 = TextClass.create! :name => :j
+    @text_class3 = TextClass.create! :name => :r
+  end
+
+
+  def convert_train_data_to_feed train_data
+    train_data.each do |(str , klass)|
+       Feed.create! :summary => str, :text_class_id => TextClass.find_by_name(klass).id, :url => "url#{str.object_id}", :mark_list => ["test_train"]
+     end
+  end
+
+
+  context "NaiveBayes" do
+
+    before :each do
+      initialize_two_klass_case
       #NOTE: Проверь, если .new вместо .create
       @name = Classifier::NAIVE_BAYES_NAME
       @classifier_nb1 = Classifier.create! :name => @name
-      TextClass.create! :name => :c
-      TextClass.create! :name => :j
     end
+
 
     it "should correctly insert features and feature properties for classifier" do
       TextClassFeature.all.should be_empty
@@ -66,35 +106,16 @@ describe Classifier do
 
   end
 
+
   context "SeveralClassifiers" do
+
     before :each do
-      @train_data1 = [
-                          ["Chinese Beijing Chinese", :c],
-                          ["Chinese Chinese Shanghai", :c],
-                          ["Chinese Macao", :c],
-                          ["Tokyo Japan Chinese", :j]
-                     ]
-
-      @train_data2 = [
-                          ["Chinese Beijing Chinese", :c],
-                          ["Chinese Chinese Shanghai", :c],
-                          ["Chinese Macao", :c],
-                          ["Chinese Macao", :c],
-                          ["Tokyo Japan Chinese", :j],
-                          ["Chinese Tokyo Japan Aizu", :j],
-                          ["Moscow Ufa Tokyo", :r]
-                     ]
-      @features = (@train_data1 + @train_data2).collect{|e| e.first.split(" ")}.flatten.uniq.sort
-      @test_data = ["Chinese Chinese Chinese Tokyo Japan"]
-
+      initialize_three_klass_case
       #NOTE: Проверь, если .new вместо .create
       @name1 = Classifier::NAIVE_BAYES_NAME
       @name2 = Classifier::NAIVE_BAYES_NAME + "-2"
       @classifier_nb1 = Classifier.create! :name => @name1
       @classifier_nb2 = Classifier.create! :name => @name2
-      TextClass.create! :name => :c
-      TextClass.create! :name => :j
-      TextClass.create! :name => :r
     end
 
     it "should divide classifiers data in database" do
@@ -133,35 +154,37 @@ describe Classifier do
 
 
   context "Work with Classifier's klasses" do
-    it "should extract text_class from classifier with text_class_features and feature properties" do
+    context "ClassExtraction" do
+
+      it "should extract text_class from classifier and rebuild it" do
+        initialize_three_klass_case
+        convert_train_data_to_feed( @train_data2 )
+        classifier = Classifier.make_from_text_classes( [ @text_class1, @text_class2, @text_class3 ], :name => Classifier::NAIVE_BAYES_NAME )
+        classifier.extract_class!( @text_class3 )
+        classifier.text_classes.all.should == [@text_class1, @text_class2]
+        classifier.text_class_features.where( :text_class_id => @text_class3 ).should be_empty
+        TextClassFeature.where( :text_class_id => @text_class3 ).should_not be_empty
+      end
+
+
+      it "should make new Classifier from extracted klass" do
+
+      end
 
     end
 
 
     context "TextClass" do
-      def make_text_classes_with_feeds
-        @text_class1 = TextClass.create! :name => :c
-        @text_class2 = TextClass.create! :name => :j
-        @train_data = [
-                                  ["Chinese Beijing Chinese", :c],
-                                  ["Chinese Chinese Shanghai", :c],
-                                  ["Chinese Macao", :c],
-                                  ["Tokyo Japan Chinese", :j]
-                      ]
-        @test_data = ["Chinese Chinese Chinese Tokyo Japan"]
 
-        @train_data.each do |(str , klass)|
-          Feed.create! :summary => str, :text_class_id => TextClass.find_by_name(klass).id, :url => "url#{str.object_id}", :mark_list => ["test_train"]
-        end
-      end
-
-      it "should show that TextClass have require data" do
+      it "should show that TextClass has require data" do
         pending
       end
 
 
       it "should make Classifier from TextClasses" do
-        make_text_classes_with_feeds
+        initialize_two_klass_case
+        convert_train_data_to_feed @train_data
+
         Classifier.make_from_text_classes( [ @text_class1, @text_class2 ], :name => Classifier::NAIVE_BAYES_NAME )
         Classifier.count.should == 1
         classifier = Classifier.first
@@ -170,10 +193,6 @@ describe Classifier do
       end
     end
 
-
-    it "should make new Classifier from extracted klass" do
-
-    end
 
   end
 
