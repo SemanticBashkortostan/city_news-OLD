@@ -2,6 +2,7 @@ class Classifier < ActiveRecord::Base
   NAIVE_BAYES_NAME = "NaiveBayes"
   SVM_NAME = "SVM"
   TRAIN_TAGS = ["test_train", "dev_train", "was_trainer"]
+  TEST_TAGS  = ["dev_test"]
 
   attr_accessible :name
 
@@ -45,41 +46,18 @@ class Classifier < ActiveRecord::Base
   end
 
 
-  def save_to_database!
-    if is_naive_bayes?
-      save_naive_bayes
-    end
-  end
-
-
-  # Один раз выгружаем из БД данные о классификаторе( features, klasses, feature properties )
-  def preload_classifier( options = {} )
-    if is_naive_bayes?
-      preload_naive_bayes options
-    end
+  # Test classifier by fetching feeds with specific tags
+  # +options[:tags]+ - list of tags, like ["dev_test", "production"]
+  # +options[:tags_options]+ - parameter which responses how to fetch, like {:match_all => true} or {:any => true}
+  def test( options={} )
+    test_feeds = get_testing_feeds( options[:tags], options[:tags_options], options[:feeds_count], options[:is_random])
+    confusion_matrix = build_confusion_matrix( test_feeds )
+    print_classifier_performance confusion_matrix
   end
 
 
   def text_classes
     TextClass.where :id => text_class_features.pluck(:text_class_id).uniq
-  end
-
-
-  def self.make_from_text_classes( text_klasses, options = {} )
-    raise ArgumentError if text_klasses.blank? || options[:name].blank?
-
-    classifier = Classifier.create! :name => options[:name]
-    classifier.preload_classifier
-    training_feeds = classifier.get_training_feeds(text_klasses)
-    training_feeds.each do |text_klass, feeds|
-      feeds.each do |feed|
-        classifier.train( feed.string_for_classifier, text_klass )
-      end
-    end
-    classifier.save_to_database!
-
-    classifier.preload_classifier
-    return classifier
   end
 
 
@@ -103,6 +81,54 @@ class Classifier < ActiveRecord::Base
   end
 
 
+  # Return testing feeds which requires to special conditions as such as
+  # +tags+, +tags_options+, +feeds_count+, +is_random+
+  def get_testing_feeds( tags=nil, tags_options=nil, feeds_count = nil, is_random = false )
+    tags ||= TEST_TAGS
+    tags_options ||= {}
+    feeds_count ||= ( train_set_count * 0.2 ).ceil
+    testing_feeds = []
+    text_classes.each do |tc|
+      scope = Feed.where(:text_class_id => tc).tagged_with( tags, tags_options )
+      testing_feeds << ( (is_random == true ? scope.order("RANDOM()").limit(feeds_count) : scope.limit(feeds_count)) )
+    end
+    return testing_feeds.flatten
+  end
+
+
+  def save_to_database!
+    if is_naive_bayes?
+      save_naive_bayes
+    end
+  end
+
+
+  # Один раз выгружаем из БД данные о классификаторе( features, klasses, feature properties )
+  def preload_classifier( options = {} )
+    if is_naive_bayes?
+      preload_naive_bayes options
+    end
+  end
+
+
+  def self.make_from_text_classes( text_klasses, options = {} )
+    raise ArgumentError if text_klasses.blank? || options[:name].blank?
+
+    classifier = Classifier.create! :name => options[:name]
+    classifier.preload_classifier
+    training_feeds = classifier.get_training_feeds(text_klasses)
+    training_feeds.each do |text_klass, feeds|
+      feeds.each do |feed|
+        classifier.train( feed.string_for_classifier, text_klass )
+      end
+    end
+    classifier.save_to_database!
+
+    classifier.preload_classifier
+    return classifier
+  end
+
+
 
   private
 
@@ -114,6 +140,36 @@ class Classifier < ActiveRecord::Base
       feeds.each do |feed|
         train( feed.string_for_classifier, tc )
       end
+    end
+  end
+
+
+  def build_confusion_matrix( feeds )
+    confusion_matrix = {}
+    feeds.each do |feed|
+      str = feed.string_for_classifier
+      classified = TextClass.find( classify( str )[:class] ).name
+      confusion_matrix[feed.text_class.name] ||= {}
+      confusion_matrix[feed.text_class.name][classified] = confusion_matrix[feed.text_class.name][classified].to_i + 1
+    end
+    return confusion_matrix
+  end
+
+
+  include Statistic
+  #TODO: Записываем id для которых тестировали и всё остальное в файл!
+  def print_classifier_performance confusion_matrix
+    accuracy = accuracy( confusion_matrix )
+    p "Confusion Matrix: #{confusion_matrix}"
+    p "Accuracy: #{accuracy}"
+    text_classes.pluck(:name).each{ |klass_name| p ["F-measure for #{klass_name} is ", f_measure(confusion_matrix, klass_name)] }
+  end
+
+
+  # Training set count for each class
+  def train_set_count
+    if is_naive_bayes?
+      @nb.export[:docs_count].values.min
     end
   end
 
