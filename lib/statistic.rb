@@ -1,7 +1,7 @@
 module Statistic
 
   def precision( confusion_matrix, klass )
-    confusion_matrix[klass][klass] / confusion_matrix.values.inject(0.0){ |s,e| s += e[klass].to_f }
+    confusion_matrix[klass][klass].to_i / confusion_matrix.values.inject(0.0){ |s,e| s += e[klass].to_f }
   end
 
 
@@ -18,7 +18,7 @@ module Statistic
       denom += confusion_matrix.values.inject(0.0){ |s,e| s += e[klass].to_f }
     end
     klasses.each do |klass|
-      val += confusion_matrix[klass][klass] / denom
+      val += confusion_matrix[klass][klass].to_i / denom
     end
     val
   end
