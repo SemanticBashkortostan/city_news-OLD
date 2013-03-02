@@ -161,7 +161,7 @@ describe Classifier do
         convert_train_data_to_feed( @train_data2 )
         classifier = Classifier.make_from_text_classes( [ @text_class1, @text_class2, @text_class3 ], :name => Classifier::NAIVE_BAYES_NAME )
         classifier.extract_class!( @text_class3 )
-        classifier.text_classes.all.should == [@text_class1, @text_class2]
+        classifier.text_classes.should == [@text_class1, @text_class2]
         classifier.text_class_features.where( :text_class_id => @text_class3 ).should be_empty
         TextClassFeature.where( :text_class_id => @text_class3 ).should_not be_empty
       end
