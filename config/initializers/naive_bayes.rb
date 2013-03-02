@@ -9,7 +9,8 @@ module NaiveBayes
     # Если feature найден, то он заменяется на отображение regexp на название feature. 
     # Например, "В Уфе есть клуб Салват Юлаев" --> "В Уфа есть клуб Уфа"
     # Это сделано чтобы не было конфликтов с другими regexp в городах( например, Салават Юлаев )
-    def get_features( string )
+    def get_features( str )
+      string = str.clone
       features = []
       text_class_names = TextClass.where( :id => @klass_docs_count.keys ).pluck(:name)
       text_class_names.each do |tc_name|
