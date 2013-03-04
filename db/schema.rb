@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20130226105149) do
+ActiveRecord::Schema.define(:version => 20130304064307) do
 
   create_table "active_admin_comments", :force => true do |t|
     t.string   "resource_id",   :null => false
@@ -43,6 +43,15 @@ ActiveRecord::Schema.define(:version => 20130226105149) do
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
   end
+
+  create_table "docs_counts", :force => true do |t|
+    t.integer "classifier_id"
+    t.integer "text_class_id"
+    t.integer "docs_count",    :default => 0
+  end
+
+  add_index "docs_counts", ["classifier_id"], :name => "index_docs_counts_on_classifier_id"
+  add_index "docs_counts", ["text_class_id"], :name => "index_docs_counts_on_text_class_id"
 
   create_table "features", :force => true do |t|
     t.string   "token"

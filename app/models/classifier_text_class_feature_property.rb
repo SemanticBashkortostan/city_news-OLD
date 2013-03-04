@@ -14,7 +14,6 @@ class ClassifierTextClassFeatureProperty < ActiveRecord::Base
      result_hash[:words_count][c_text_class_feature.text_class_feature.text_class_id][c_text_class_feature.text_class_feature.feature.token] = c_text_class_feature.feature_count
     end
 
-    result_hash[:docs_count] = Hash[ Classifier.find(classifier_id).text_classes.collect{ |text_class| [ text_class.id, text_class.feeds.tagged_with(Classifier::TRAIN_TAGS, :any => true).count ] } ]
     result_hash[:vocabolary] = Set.new( words_count.collect{|e| e.text_class_feature.feature.token } )
     return result_hash
   end
