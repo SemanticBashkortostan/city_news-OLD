@@ -144,10 +144,10 @@ describe Classifier do
       @classifier_nb2.text_classes.should include( r_klass )
 
       @classifier_nb1.reload
-      nb_data = ClassifierTextClassFeatureProperty.import_to_naive_bayes( @classifier_nb1 )
+      nb_data = @classifier_nb1.import_naive_bayes_data
       nb_data[:docs_count].keys.should_not include(r_klass.id)
 
-      nb_data = ClassifierTextClassFeatureProperty.import_to_naive_bayes( @classifier_nb2 )
+      nb_data = @classifier_nb2.import_naive_bayes_data
       nb_data[:docs_count].keys.should include(r_klass.id)
     end
   end
@@ -164,6 +164,8 @@ describe Classifier do
         classifier.text_classes.should == [@text_class1, @text_class2]
         classifier.text_class_features.where( :text_class_id => @text_class3 ).should be_empty
         TextClassFeature.where( :text_class_id => @text_class3 ).should_not be_empty
+        classifier.reload
+        classifier.text_classes.should == [@text_class1, @text_class2]
       end
 
 
@@ -196,7 +198,7 @@ describe Classifier do
 
   end
 
-  
+
   context "Performance of Classifier" do
     it "should correctly calculate performance of the classifier" do
       initialize_two_klass_case
