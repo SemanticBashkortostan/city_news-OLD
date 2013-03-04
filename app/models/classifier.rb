@@ -9,6 +9,9 @@ class Classifier < ActiveRecord::Base
   has_many :classifier_text_class_feature_properties, :dependent => :destroy
   has_many :text_class_features, :through => :classifier_text_class_feature_properties
 
+  has_many :docs_counts, :dependent => :destroy
+  has_many :text_classes, :through => :docs_counts
+
 
   def train str, klass
     case klass
@@ -22,25 +25,37 @@ class Classifier < ActiveRecord::Base
         raise ArgumentError
     end
 
+    features_vector = get_features_vector( str )
+    if features_vector.empty?
+      p ["EXCEPTION", str, klass]
+      raise Exception
+    end
+
+
+    #NOTE: Refactor this part if will be a lot of data
+    docs_count = docs_counts.find_or_create_by_text_class_id(klass_id)
+    docs_count.docs_count += 1
+    docs_count.save!
+    docs_counts.reload
+
     if is_naive_bayes?
-      naive_bayes_train( str, klass_id )
-    elsif name[SVM_NAME]
-      svm_train( str, klass_id )
+      naive_bayes_train( features_vector, klass_id )
     end
   end
 
 
   def classify str
+    features_vector = get_features_vector( str )
+    return nil if features_vector.empty?
     if is_naive_bayes?
-      naive_bayes_classify( str )
-    elsif name =~ SVM_NAME
-      svm_classify( str )
+      naive_bayes_classify( features_vector )
     end
   end
 
 
   def extract_class!( text_class )
-    ClassifierTextClassFeatureProperty.where( :classifier_id => self.id, :text_class_feature_id => self.text_class_features.where( :text_class_id => text_class ) ).destroy_all
+    classifier_text_class_feature_properties.where( :text_class_feature_id => self.text_class_features.where( :text_class_id => text_class ) ).destroy_all
+    text_classes.delete(text_class)
     rebuild_classifier
     save_to_database!
   end
@@ -63,19 +78,6 @@ class Classifier < ActiveRecord::Base
   end
 
 
-  def text_classes
-    TextClass.where( :id => text_class_features.pluck(:text_class_id).uniq ).all
-  end
-
-
-  def text_classes=( tc_arr )
-    tc_arr.each do |tc|
-      tcf = TextClassFeature.find_or_create_by_text_class_id_and_feature_id( tc.id, Feature.find_or_create_by_token("token-#{SecureRandom.uuid}").id )
-      ClassifierTextClassFeatureProperty.find_or_create_by_classifier_id_and_text_class_feature_id_and_feature_count( self.id, tcf.id, 1 )
-    end
-  end
-
-
   # Select feeds. It will be equal by count for NaiveBayes.
   # Returns { TextClass => selected_feeds }
   def get_training_feeds
@@ -88,7 +90,7 @@ class Classifier < ActiveRecord::Base
     if is_naive_bayes? && (feeds_counts.min != feeds_counts.max)
       min_count = feeds_counts.min
       training_feeds_hash.each do |k, v|
-        training_feeds_hash[k] = v[0...min_count]
+        training_feeds_hash[k] = v.limit(min_count)
       end
     end
 
@@ -132,6 +134,7 @@ class Classifier < ActiveRecord::Base
 
     classifier = Classifier.create! :name => options[:name]
     classifier.text_classes = text_klasses
+    classifier.reload
     classifier.preload_classifier
     training_feeds = classifier.get_training_feeds
     training_feeds.each do |text_klass, feeds|
@@ -143,6 +146,30 @@ class Classifier < ActiveRecord::Base
 
     classifier.preload_classifier
     return classifier
+  end
+
+
+  def get_features_vector str
+    return str if Rails.env == "test"
+    if is_naive_bayes?
+      filtered_str = nb_filter_string( str )
+      return nb_get_features( filtered_str )
+    end
+  end
+
+
+  def export_nb
+    @nb.export
+  end
+
+
+  def form_docs_counts_hash
+    {:docs_count => Hash[docs_counts.collect{|dc| [dc.text_class_id, dc.docs_count] }]}
+  end
+
+
+  def import_naive_bayes_data options={}
+    ClassifierTextClassFeatureProperty.import_to_naive_bayes( self.id ).merge(form_docs_counts_hash).merge(options)
   end
 
 
@@ -245,7 +272,7 @@ class Classifier < ActiveRecord::Base
 
   def preload_naive_bayes options
     @nb = NaiveBayes::NaiveBayes.new
-    nb_data = ClassifierTextClassFeatureProperty.import_to_naive_bayes( self.id ).merge(options)
+    nb_data = import_naive_bayes_data(options)
     @nb.import!( nb_data[:docs_count], nb_data[:words_count], nb_data[:vocabolary]  )
   end
 
@@ -270,23 +297,38 @@ class Classifier < ActiveRecord::Base
   end
 
 
-  def naive_bayes_filter? str
-    return true if Rails.env == "test"
-    text_classes.collect{|tc| tc.name}.each do |tc_name|
-      return true if str =~ Regexp.new(Settings.bayes.regexp[tc_name])
+  def nb_filter_string str
+    filtered_str = str.clone
+    # Get regexp through all classes for 'Салават Юлаев' case
+    TextClass.pluck(:name).each do |tc_name|
+      filtered_str.gsub!( Regexp.new(Settings.bayes.regexp[tc_name]), tc_name )
     end
-    return false
+    return filtered_str
   end
 
 
-  def naive_bayes_train( str, klass_id )
-    raise Exception unless naive_bayes_filter?( str )
-    @nb.train( str, klass_id )
+  def nb_get_features str
+    features = []
+    text_classes.each do |tc|
+      matched = str.scan( Regexp.new(Settings.bayes.regexp[tc.name]) )
+      features += [ tc.name ] * matched.count
+    end
+    # Add domain only if present some city named feature
+    unless features.empty?
+      domain = str.scan( Regexp.new( Settings.bayes.regexp["domain"][0] ) )
+      features << domain[0].split("/")[2] unless domain.empty?
+    end
+    return features
   end
 
 
-  def naive_bayes_classify( str )
-    @nb.classify( str ) if naive_bayes_filter?( str )
+  def naive_bayes_train( features_vector, klass_id )
+    @nb.train( features_vector, klass_id )
+  end
+
+
+  def naive_bayes_classify( features_vector )
+    @nb.classify( features_vector )
   end
 
 
