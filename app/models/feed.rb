@@ -9,6 +9,7 @@ class Feed < ActiveRecord::Base
   validate :summary_or_title_presence
 
   scope :with_text_klass, lambda{ |text_klass_id| where('text_class_id = ?', text_klass_id) }
+  scope :unclassified_fetched, tagged_with(["fetched", "production"], :match_all => true).tagged_with(["uncorrect_classified", "uncorrect_data"], :exclude => true ).where(:text_class_id => nil)
 
   before_validation :convert_if_punycode_url
   before_save :strip_html_tags
@@ -20,11 +21,11 @@ class Feed < ActiveRecord::Base
   end
 
 
-  def self.fetched_trainers( cnt = 3 )
-    scope = tagged_with(["fetched", "production", "classified", "to_train"])
+  def self.fetched_trainers( cnt = 5, text_classes )
+    scope = tagged_with(["fetched", "production", "classified", "to_train"], :match_all => true).tagged_with(["was_trainer"], :exclude => true)
     result = []
-    Settings.bayes.klasses.each do |klass_name|
-      data = scope.where( :text_class_id => TextClass.find_by_name( klass_name ).id ).limit(cnt)
+    text_classes.each do |tc|
+      data = scope.where( :text_class_id => tc.id ).limit(cnt)
       return nil if data.count != cnt
       result << data.all
     end

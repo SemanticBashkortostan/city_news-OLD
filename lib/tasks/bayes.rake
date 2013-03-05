@@ -55,7 +55,7 @@ namespace :bayes do
     @nb = NaiveBayes::NaiveBayes.new
     nb_data = TextClassFeature.import_to_naive_bayes
     @nb.import!( nb_data[:docs_count], nb_data[:words_count], nb_data[:vocabolary]  )
-    feeds = Feed.tagged_with(["fetched", "production"]).where(:text_class_id => nil)
+    feeds = Feed.tagged_with(["fetched", "production"], :match_all => true).tagged_with(["uncorrect_classified", "uncorrect_data"], :exclude => true ).where(:text_class_id => nil)
     multiplicator = 42
     feeds.each do |feed|
       nb_classified = @nb.classify( feed.string_for_classifier )

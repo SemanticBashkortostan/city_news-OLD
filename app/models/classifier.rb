@@ -31,7 +31,6 @@ class Classifier < ActiveRecord::Base
       raise Exception
     end
 
-
     #NOTE: Refactor this part if will be a lot of data
     docs_count = docs_counts.find_or_create_by_text_class_id(klass_id)
     docs_count.docs_count += 1
