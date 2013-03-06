@@ -9,26 +9,59 @@ namespace :classifier do
 
   task :naive_bayes_into_classifier_model => :environment do
     Classifier.destroy_all
-    main_names = ["Уфа", "Стерлитамак", "Нефтекамск", "Салават"]
-    main_classifier = Classifier.make_from_text_classes( TextClass.where(:name => main_names), :name => "#{Classifier::NAIVE_BAYES_NAME}-main" )
-    ishimbay_names = ["Стерлитамак", "Нефтекамск", "Салават", "Ишимбай"]
-    ishimbay_classifier = Classifier.make_from_text_classes( TextClass.where(:name => ishimbay_names ), :name => "#{Classifier::NAIVE_BAYES_NAME}-ishimbay" )
+    all_names = ["Уфа", "Стерлитамак", "Нефтекамск", "Салават", "Ишимбай"]
+    all_classifier = Classifier.make_from_text_classes( TextClass.where(:name => all_names ), :name => "#{Classifier::NAIVE_BAYES_NAME}-all" )
+    TextClass.where( :name => all_names ).all.each do |tc|
+      FeedSource.all.each do |fc|
+        str = "#{tc.name} Domain: #{fc.url}"
+        all_classifier.train(str, tc)
+      end
+    end
+    all_classifier.save_to_database!
+
+    #
+    #main_names = ["Уфа", "Стерлитамак", "Нефтекамск", "Салават"]
+    #main_classifier = Classifier.make_from_text_classes( TextClass.where(:name => main_names), :name => "#{Classifier::NAIVE_BAYES_NAME}-main" )
+    #ishimbay_names = ["Стерлитамак", "Нефтекамск", "Салават", "Ишимбай"]
+    #ishimbay_classifier = Classifier.make_from_text_classes( TextClass.where(:name => ishimbay_names ), :name => "#{Classifier::NAIVE_BAYES_NAME}-ishimbay" )
+    #
+    #TextClass.where( :name => main_names ).all.each do |tc|
+    #  FeedSource.all.each do |fc|
+    #    str = "#{tc.name} Domain: #{fc.url}"
+    #    main_classifier.train(str, tc)
+    #  end
+    #end
+    #p main_classifier.export_nb
+    #
+    #TextClass.where( :name => ishimbay_names ).all.each do |tc|
+    #  FeedSource.all.each do |fc|
+    #    str = "#{tc.name} Domain: #{fc.url}"
+    #    ishimbay_classifier.train(str, tc)
+    #  end
+    #end
+    #
+    #main_classifier.save_to_database!
+    #ishimbay_classifier.save_to_database!
+    #
+    #main_classifier.reload
+    #main_classifier.preload_classifier
   end
 
 
-  desc "Print each classifier performance"
+  desc "Write each classifier performance in .log. Also prints all classifiers compare in .csv."
   task :performance => :environment do
     Classifier.all.each do |classifier|
       p "#{classifier.name} performance: "
       classifier.preload_classifier
-      classifier.test( {:tags => Classifier::TRAIN_TAGS, :tags_options => {:exclude => true} } ) #, :feeds_count => 3000 })
+      classifier.test( {:tags => Classifier::TRAIN_TAGS + Classifier::UNCORRECT_DATA_TAGS, :tags_options => {:exclude => true} , :feeds_count => 150, :file_prefix => '150filtered_trained_domain_'} )
     end
+    ClassifiersEnsemble.test_all :name => '150filtered_trained_domain', :count => 150
   end
 
 
   desc "Classify fetched feeds"
   task :classify_fetched => :environment do
-    classifiers_ensemble = ClassifiersEnsemble.new( Classifier.all, :preload => true )
+    classifiers_ensemble = ClassifiersEnsemble.new( [Classifier.find_by_name("#{Classifier::NAIVE_BAYES_NAME}-all")], :preload => true )
 
     Feed.unclassified_fetched.each do |feed|
       classify_info = classifiers_ensemble.classify( feed.string_for_classifier )
@@ -52,10 +85,11 @@ namespace :classifier do
   def train_by_production_data
     Classifier.all.each do |classifier|
       classifier.preload_classifier
-      fetched_trainers = Feed.fetched_trainers( 5, classifier.text_classes )
+      fetched_trainers = Feed.fetched_trainers( 5, classifier.text_classes, classifier.id )
       next if fetched_trainers.nil?
       fetched_trainers.each do |train_feed|
         classifier.train( train_feed.string_for_classifier, train_feed.text_class )
+        classifier.train_feeds << train_feed
       end
       classifier.save_to_database!
     end

@@ -112,8 +112,9 @@ namespace :production_feeds do
   end
 
 
+  #NOTE: Bad feelings take me when I look at this function!
   def production_satisfaction?(entry)
-    regexp = Regexp.new Settings.bayes.regexp.values.collect{|e| e[0]}.join("|")
+    regexp = Regexp.new Settings.bayes.regexp.values.join("|")
     str = entry.title + " " + entry.summary
     not str.scan(regexp).empty?
   end
@@ -130,7 +131,7 @@ namespace :production_feeds do
           if production_satisfaction?( entry )
             create_production_feed( entry ) 
             fetched += 1
-          end 
+          end
           break if fetched >= max_fetched       
         end        
       rescue Exception => e
@@ -138,7 +139,7 @@ namespace :production_feeds do
       end
       fetched = 0
     end
-    Rake::Task['bayes:classify_fetched'].invoke
+    Rake::Task['classifier:classify_fetched'].invoke
   end
 end
 
