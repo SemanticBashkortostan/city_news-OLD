@@ -32,7 +32,7 @@ every 3.minutes do
 end
 
 every 10.minutes do
-  rake "bayes:train_by_production_data"
+  rake "classifier:train_by_production_data"
 end
 
 every 1.day, :at => '5:00 am' do

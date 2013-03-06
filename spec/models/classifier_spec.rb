@@ -208,6 +208,10 @@ describe Classifier do
       Feed.create! :summary => "Chinese", :text_class_id => TextClass.first.id, :url => "dsda#2", :mark_list => ["dev_test"]
 
       classifier = Classifier.make_from_text_classes([@text_class1, @text_class2], :name => Classifier::NAIVE_BAYES_NAME)
+
+      classifier.train_feeds.should include(Feed.tagged_with("test_train").first)
+      Feed.tagged_with("test_train").first.classifiers.should include(classifier)
+
       classifier.test
     end
   end

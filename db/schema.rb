@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20130304064307) do
+ActiveRecord::Schema.define(:version => 20130305071745) do
 
   create_table "active_admin_comments", :force => true do |t|
     t.string   "resource_id",   :null => false
@@ -43,6 +43,13 @@ ActiveRecord::Schema.define(:version => 20130304064307) do
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
   end
+
+  create_table "classifiers_feeds", :force => true do |t|
+    t.integer "classifier_id"
+    t.integer "feed_id"
+  end
+
+  add_index "classifiers_feeds", ["classifier_id", "feed_id"], :name => "index_classifiers_feeds_on_classifier_id_and_feed_id"
 
   create_table "docs_counts", :force => true do |t|
     t.integer "classifier_id"
