@@ -18,3 +18,4 @@ class ClassifierTextClassFeatureProperty < ActiveRecord::Base
     return result_hash
   end
 end
+
