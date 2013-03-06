@@ -3,6 +3,7 @@ class Classifier < ActiveRecord::Base
   SVM_NAME = "SVM"
   TRAIN_TAGS = ["test_train", "dev_train", "was_trainer", "to_train"]
   TEST_TAGS  = ["dev_test"]
+  UNCORRECT_DATA_TAGS = ["uncorrect_data", "uncorrect_classified", "several_class"]
 
   attr_accessible :name
 
@@ -11,6 +12,8 @@ class Classifier < ActiveRecord::Base
 
   has_many :docs_counts, :dependent => :destroy
   has_many :text_classes, :through => :docs_counts
+
+  has_and_belongs_to_many :train_feeds, :class_name => "Feed"
 
 
   def train str, klass
@@ -73,7 +76,7 @@ class Classifier < ActiveRecord::Base
     test_feeds = get_testing_feeds( options[:tags], options[:tags_options], options[:feeds_count], options[:is_random] )
     confusion_matrix = build_confusion_matrix( test_feeds )
     classifier_performance confusion_matrix
-    pretty_test_data_file
+    pretty_test_data_file( options[:file_prefix] )
   end
 
 
@@ -117,6 +120,8 @@ class Classifier < ActiveRecord::Base
     if is_naive_bayes?
       save_naive_bayes
     end
+    save!
+    reload
   end
 
 
@@ -139,6 +144,7 @@ class Classifier < ActiveRecord::Base
     training_feeds.each do |text_klass, feeds|
       feeds.each do |feed|
         classifier.train( feed.string_for_classifier, text_klass )
+        classifier.train_feeds << feed
       end
     end
     classifier.save_to_database!
@@ -197,7 +203,7 @@ class Classifier < ActiveRecord::Base
         next
       end
       klass_name = TextClass.find( classified[:class] ).name
-      @test_data[:data] << [feed.text_class.name == klass_name, feed.id, feed.text_class.name, klass_name, str]
+      @test_data[:data] << [feed.text_class.name == klass_name, feed.id, feed.text_class.name, klass_name, str, classified[:all_values][0]]
       confusion_matrix[feed.text_class.name] ||= {}
       confusion_matrix[feed.text_class.name][klass_name] = confusion_matrix[feed.text_class.name][klass_name].to_i + 1
     end
@@ -216,11 +222,11 @@ class Classifier < ActiveRecord::Base
   end
 
 
-  def pretty_test_data_file
+  def pretty_test_data_file file_prefix=nil
     # +:testing_options+ - test(options); +:data+ - array with [true or false, feed.id, feed.tc.name, tc.name, str];
     # +:uncorrect_data+ - data not accepted by filter [feed.id, feed.tc.name, str];
     # +:f_measures+ - hash {tc.name => f_measure}; +:accuracy+; +confusion_matrix+ - hash
-    file = File.new("#{Rails.root}/log/classifiers_tests_#{name}.log", 'w')
+    file = File.new("#{Rails.root}/log/#{file_prefix}classifiers_tests_#{name}.log", 'w')
 
     str = "#{Time.now} -- Classifier performance id:#{id} name:#{name} \n\n"
 
@@ -243,9 +249,9 @@ class Classifier < ActiveRecord::Base
     str += "\n"
 
     str += "Data: \n"
-    str += "Correct\t id\t feed.text_class\t classified_class\t str\n"
+    str += "Correct\t id\t feed.text_class\t classified_class\t str\t prob \n"
     @test_data[:data].sort_by{|data| (data[0] == false ? 0 : 1) }.each do |row|
-      str += "#{row[0]}\t #{row[1]}\t #{row[2]}\t\t #{row[3]}\t\t\t #{row[4]}\n"
+      str += "#{row[0]}\t #{row[1]}\t #{row[2]}\t\t #{row[3]}\t\t\t #{row[4]}\t #{row[5]}\n"
     end
     str += "\n"
 
@@ -282,7 +288,6 @@ class Classifier < ActiveRecord::Base
       words_count.each do |word, cnt|
         begin
           tcf =  TextClassFeature.find_or_create_by_text_class_id_and_feature_id( klass_id, Feature.find_or_create_by_token( word ).id )
-          self.text_class_features << tcf
           ctcfp = ClassifierTextClassFeatureProperty.find_or_create_by_classifier_id_and_text_class_feature_id( self.id, tcf.id )
           ctcfp.feature_count = cnt
           ctcfp.save! if ctcfp.changed?
@@ -314,7 +319,7 @@ class Classifier < ActiveRecord::Base
     end
     # Add domain only if present some city named feature
     unless features.empty?
-      domain = str.scan( Regexp.new( Settings.bayes.regexp["domain"][0] ) )
+      domain = str.scan( Regexp.new( Settings.bayes.regexp["domain"] ) )
       features << domain[0].split("/")[2] unless domain.empty?
     end
     return features

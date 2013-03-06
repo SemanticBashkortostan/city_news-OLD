@@ -5,11 +5,15 @@ class Feed < ActiveRecord::Base
 
   acts_as_taggable_on :marks
 
+  has_and_belongs_to_many :classifiers
+
   validates :url, :uniqueness => true
   validate :summary_or_title_presence
 
-  scope :with_text_klass, lambda{ |text_klass_id| where('text_class_id = ?', text_klass_id) }
-  scope :unclassified_fetched, tagged_with(["fetched", "production"], :match_all => true).tagged_with(["uncorrect_classified", "uncorrect_data"], :exclude => true ).where(:text_class_id => nil)
+  scope :without_uncorrect_tags, tagged_with(Classifier::UNCORRECT_DATA_TAGS, :exclude => true )
+  scope :with_text_klass, lambda{ |text_klass_id| without_uncorrect_tags.where('text_class_id = ?', text_klass_id) }
+  scope :unclassified_fetched, tagged_with(["fetched", "production"], :match_all => true).without_uncorrect_tags.where(:text_class_id => nil)
+  scope :was_trainers, lambda{ |classifier_id| includes(:classifiers).where(:classifiers_feeds => {:classifier_id => classifier_id}) }
 
   before_validation :convert_if_punycode_url
   before_save :strip_html_tags
@@ -21,8 +25,9 @@ class Feed < ActiveRecord::Base
   end
 
 
-  def self.fetched_trainers( cnt = 5, text_classes )
-    scope = tagged_with(["fetched", "production", "classified", "to_train"], :match_all => true).tagged_with(["was_trainer"], :exclude => true)
+  def self.fetched_trainers( cnt, text_classes, cl_id )
+    trained_feed_ids = was_trainers(cl_id).collect{|train_feed| train_feed.id}
+    scope = where("feeds.id not in (?)", trained_feed_ids).tagged_with(["fetched", "production", "classified", "to_train"])
     result = []
     text_classes.each do |tc|
       data = scope.where( :text_class_id => tc.id ).limit(cnt)
