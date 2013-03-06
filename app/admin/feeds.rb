@@ -1,5 +1,6 @@
 ActiveAdmin.register Feed do
 
+  filter :id
   filter :text_class
   filter :taggings_tag_name, :as => :check_boxes, :collection => proc { Feed.mark_counts.map{|t| t.name} }
 
