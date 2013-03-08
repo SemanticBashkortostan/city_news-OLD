@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20130126134123) do
+ActiveRecord::Schema.define(:version => 20130305071745) do
 
   create_table "active_admin_comments", :force => true do |t|
     t.string   "resource_id",   :null => false
@@ -28,8 +28,58 @@ ActiveRecord::Schema.define(:version => 20130126134123) do
   add_index "active_admin_comments", ["namespace"], :name => "index_active_admin_comments_on_namespace"
   add_index "active_admin_comments", ["resource_type", "resource_id"], :name => "index_admin_notes_on_resource_type_and_resource_id"
 
+  create_table "classifier_text_class_feature_properties", :force => true do |t|
+    t.integer  "classifier_id"
+    t.integer  "text_class_feature_id"
+    t.integer  "feature_count"
+    t.datetime "created_at",            :null => false
+    t.datetime "updated_at",            :null => false
+  end
+
+  add_index "classifier_text_class_feature_properties", ["classifier_id", "text_class_feature_id"], :name => "classifier_tcf_prop_ind"
+
+  create_table "classifiers", :force => true do |t|
+    t.string   "name"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+  end
+
+  create_table "classifiers_feeds", :force => true do |t|
+    t.integer "classifier_id"
+    t.integer "feed_id"
+  end
+
+  add_index "classifiers_feeds", ["classifier_id", "feed_id"], :name => "index_classifiers_feeds_on_classifier_id_and_feed_id"
+
+  create_table "docs_counts", :force => true do |t|
+    t.integer "classifier_id"
+    t.integer "text_class_id"
+    t.integer "docs_count",    :default => 0
+  end
+
+  add_index "docs_counts", ["classifier_id"], :name => "index_docs_counts_on_classifier_id"
+  add_index "docs_counts", ["text_class_id"], :name => "index_docs_counts_on_text_class_id"
+
   create_table "features", :force => true do |t|
     t.string   "token"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+  end
+
+  create_table "feed_sources", :force => true do |t|
+    t.integer  "text_class_id"
+    t.string   "url"
+    t.datetime "created_at",    :null => false
+    t.datetime "updated_at",    :null => false
+  end
+
+  add_index "feed_sources", ["text_class_id"], :name => "index_feed_sources_on_text_class_id"
+
+  create_table "feedbacks_feedbacks", :force => true do |t|
+    t.string   "topic"
+    t.text     "text"
+    t.string   "email"
+    t.string   "url"
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
   end

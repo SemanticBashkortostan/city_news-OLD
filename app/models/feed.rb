@@ -5,24 +5,32 @@ class Feed < ActiveRecord::Base
 
   acts_as_taggable_on :marks
 
-  validates :url, :uniqueness => true
+  has_and_belongs_to_many :classifiers
 
-  scope :with_text_klass, lambda{ |text_klass_id| where('text_class_id = ?', text_klass_id) }
+  validates :url, :uniqueness => true
+  validate :summary_or_title_presence
+
+  scope :without_uncorrect_tags, tagged_with(Classifier::UNCORRECT_DATA_TAGS, :exclude => true )
+  scope :with_text_klass, lambda{ |text_klass_id| without_uncorrect_tags.where('text_class_id = ?', text_klass_id) }
+  scope :unclassified_fetched, tagged_with(["fetched", "production"], :match_all => true).without_uncorrect_tags.where(:text_class_id => nil)
+  scope :was_trainers, lambda{ |classifier_id| includes(:classifiers).where(:classifiers_feeds => {:classifier_id => classifier_id}) }
 
   before_validation :convert_if_punycode_url
   before_save :strip_html_tags
+  before_save :set_default_published_at
 
 
   def string_for_classifier
-    title + " " + summary + " " + "Domain: #{url}"
+    title.to_s + " " + summary.to_s + " " + "Domain: #{url}"
   end
 
 
-  def self.fetched_trainers( cnt = 3 )
-    scope = tagged_with(["fetched", "production", "classified", "to_train"])
+  def self.fetched_trainers( cnt, text_classes, cl_id )
+    trained_feed_ids = was_trainers(cl_id).collect{|train_feed| train_feed.id}
+    scope = where("feeds.id not in (?)", trained_feed_ids).tagged_with(["fetched", "production", "classified", "to_train"])
     result = []
-    Settings.bayes.klasses.each do |klass_name|
-      data = scope.where( :text_class_id => TextClass.find_by_name( klass_name ).id ).limit(cnt)
+    text_classes.each do |tc|
+      data = scope.where( :text_class_id => tc.id ).limit(cnt)
       return nil if data.count != cnt
       result << data.all
     end
@@ -33,16 +41,31 @@ class Feed < ActiveRecord::Base
   protected
 
 
+  def summary_or_title_presence
+    errors.add(:base, "Title and summary is not exist") if summary.blank? && title.blank?
+  end
+
+
   def convert_if_punycode_url
     url.gsub!(/xn--.+xn--p1ai/, SimpleIDN.to_unicode(url.scan(/xn--.+xn--p1ai/).first)) unless url.scan(/xn--.+xn--p1ai/).empty?
   end
 
 
   def strip_html_tags
-    str = ActionController::Base.helpers.strip_tags( summary )
-    self.summary = str.html_safe
-    str = ActionController::Base.helpers.strip_tags( title )
-    self.title = str.html_safe
+    if summary.present?
+      str = ActionController::Base.helpers.strip_tags( summary )
+      self.summary = str.html_safe
+    end
+
+    if title.present?
+      str = ActionController::Base.helpers.strip_tags( title )
+      self.title = str.html_safe
+    end
+  end
+
+
+  def set_default_published_at
+    self.published_at ||= Time.now - 30.minutes
   end
 
 end

@@ -25,7 +25,7 @@ namespace :bayes do
     @nb = NaiveBayes::NaiveBayes.new
     cities_names = Settings.bayes.klasses
     cities = TextClass.where :name => cities_names
-    @train_data = Feed.tagged_with("dev_train").where( :text_class_id => cities  )
+    @train_data = Feed.tagged_with("dev_train").where( :text_class_id => cities )
     @test_data  = Feed.tagged_with("dev_test").where( :text_class_id => cities )
 
     @train_data.each do |feed|
@@ -50,28 +50,12 @@ namespace :bayes do
   end
 
 
-  task :test_with_regexp => :environment do
-    cities_names = Settings.bayes.klasses
-    cities = TextClass.where :name => cities_names
-    @test_data  = Feed.tagged_with("dev_test").where( :text_class_id => cities )
-
-    confusion_matrix = {}
-    @test_data.each do |feed|
-      classified = classify_with_regexp( feed.summary + feed.title )
-      confusion_matrix[feed.text_class.name] ||= {}
-      confusion_matrix[feed.text_class.name][classified] = confusion_matrix[feed.text_class.name][classified].to_i + 1
-    end
-    p confusion_matrix
-    p accuracy(confusion_matrix)
-
-  end
-
 
   task :classify_fetched => :environment do
     @nb = NaiveBayes::NaiveBayes.new
     nb_data = TextClassFeature.import_to_naive_bayes
     @nb.import!( nb_data[:docs_count], nb_data[:words_count], nb_data[:vocabolary]  )
-    feeds = Feed.tagged_with(["fetched", "production"]).where(:text_class_id => nil)
+    feeds = Feed.tagged_with(["fetched", "production"], :match_all => true).tagged_with(["uncorrect_classified", "uncorrect_data"], :exclude => true ).where(:text_class_id => nil)
     multiplicator = 42
     feeds.each do |feed|
       nb_classified = @nb.classify( feed.string_for_classifier )
@@ -110,10 +94,34 @@ namespace :bayes do
   end
 
 
+
+
+
+
+  #--------------------------------
+  #-------To Delete Section--------
+  #--------------------------------
+
+  task :test_with_regexp => :environment do
+    cities_names = Settings.bayes.klasses
+    cities = TextClass.where :name => cities_names
+    @test_data  = Feed.tagged_with("dev_test").where( :text_class_id => cities )
+
+    confusion_matrix = {}
+    @test_data.each do |feed|
+      classified = classify_with_regexp( feed.summary + feed.title )
+      confusion_matrix[feed.text_class.name] ||= {}
+      confusion_matrix[feed.text_class.name][classified] = confusion_matrix[feed.text_class.name][classified].to_i + 1
+    end
+    p confusion_matrix
+    p accuracy(confusion_matrix)
+
+  end
+
+
   def classify_with_regexp( string )
-    Settings.bayes.shorten_klasses.each do |short_name|
-      regexp_arr = Settings.bayes.regexp["short_name"]
-      return regexp_arr[1] unless string.scan( Regexp.new( regexp_arr[0] ) ).blank?
+    Settings.bayes.klasses.each do |klass_name|
+      return klass_name unless string.scan( Regexp.new( Settings.bayes.regexp[klass_name] ) ).blank?
     end
   end
 

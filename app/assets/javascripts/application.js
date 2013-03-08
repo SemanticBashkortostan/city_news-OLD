@@ -13,4 +13,18 @@
 //= require jquery
 //= require jquery_ujs
 //= require bootstrap
+//= require jquery.ui.dialog
 //= require_tree .
+
+jQuery(function($){
+  $("body").on({
+        // When ajaxStart is fired, add 'loading' to body class
+        ajaxStart: function() {
+            $(this).addClass("loading");
+        },
+        // When ajaxStop is fired, remove 'loading' from body class
+        ajaxStop: function() {
+            $(this).removeClass("loading");
+        }
+    });
+});

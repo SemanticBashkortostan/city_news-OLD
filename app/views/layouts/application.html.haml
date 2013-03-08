@@ -2,12 +2,14 @@
 %html
   %head
     %meta{:content => "width=device-width, initial-scale=1.0", :name => "viewport"}
+    %meta{:name => 'yandex-verification', :content => '7532159077e96540' }
     %title= content_for?(:title) ? ("Новости Башкортостана - " + yield(:title)) : "Новости Башкортостана"
     %meta{:content => "Новости Башкортостана, #{TextClass.all.collect{|e| e.name}.join(', ')}", :name => "keywords"}
     - default_descr = "Агрегатор новостей Башкортостана по городам из разных источников. "
     %meta{:content => content_for?(:description) ? (default_descr + yield(:description)) : default_descr, :name => "description"}
     = stylesheet_link_tag "application", :media => "all"
     = javascript_include_tag "application"
+    %script{:src => "https://apis.google.com/js/plusone.js", :type => "text/javascript"}
     = csrf_meta_tags
     = yield(:head)
     :javascript
@@ -26,17 +28,20 @@
         .container
           = render 'layouts/navigation'
     #main{:role => "main"}
-      .container
-        .content
-          .row
-            .span12
-              = render 'layouts/messages'
-              = yield
-          %footer
-            %div{ :align => "center" }
-              %a.feedback{ :href => "mailto:rbcitiesnews@gmail.com" } Обратная связь
-              %br
-              %script{:src => "https://apis.google.com/js/plusone.js", :type => "text/javascript"}
-              %g:plusone
+      .container      
+        .row
+          .span9.content
+            = render 'layouts/messages'
+            = yield
+          .span2
+            %ul{ :class => "nav nav-list" }
+              %li 
+                %g:plusone{ :href => "http://www.rbcitynews.ru" }       
+              %li
+                = link_to "О сайте", about_path       
+              %li
+                %div{ :id => 'feedback-form', :title => "Сообщение" }                
+                = link_to "Обратная связь", feedbacks.feedback_path, :remote => true, :class => 'feedback'
       / ! end of .container
     / ! end of #main
+    .ajaxmodal

@@ -1,11 +1,12 @@
 #coding: utf-8
 source 'https://rubygems.org'
 
-gem 'rails', '3.2.11'
+gem 'rails', '3.2.12'
 gem 'pg'
 gem 'activeadmin'
 
 gem 'jquery-rails'
+
 gem "haml", ">= 3.1.7"
 gem "bootstrap-sass", ">= 2.1.1.0"
 gem "devise", ">= 2.1.2"
@@ -21,7 +22,12 @@ gem 'whenever', :require => false
 gem 'russian'
 gem 'exception_notification'
 
+
+gem 'sitemap_generator'
+
 gem "naive_bayes", :git => "git://github.com/sld/naive_bayes.git"
+
+gem "feedbacks", :git => "git://github.com/sld/feedbacks.git"
 
 
 group :assets do

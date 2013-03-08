@@ -1,18 +1,5 @@
 #coding: utf-8
 
-rss_sources = { :ishimbay => ["http://ishimbay-news.ru/rss.xml", "http://ishimbai.procrb.ru/rss/?rss=y",
-                          "http://vestivmeste.ru/index.php/v-dvuh-slovah?format=feed&type=rss",
-                          "http://восход-ишимбай.рф/index.php?option=com_content&view=category&id=8&Itemid=598&format=feed&type=rss",
-                          "http://восход-ишимбай.рф/index.php?option=com_content&view=category&id=10&Itemid=600&format=feed&type=rss",
-                          "http://восход-ишимбай.рф/index.php?option=com_content&view=category&id=26&Itemid=601&format=feed&type=rss",
-                          "http://восход-ишимбай.рф/index.php?option=com_content&view=category&id=12&Itemid=602&format=feed&type=rss"
-                          ],
-             :salavat => ["http://slvnews.ru/rss", "http://rssportal.ru/feed/163654.xml" ],
-             :ufa => ["http://rssportal.ru/feed/129727.xml", "http://news.yandex.ru/Ufa/index.rss"],
-             :sterlitamak => ["http://rssportal.ru/feed/223350.xml", "http://sterlegrad.ru/rss.xml", "http://cityopen.ru/?feed=rss2"],
-             :neftekamsk => ["http://neftekamsk.procrb.ru/rss/?rss=y", "http://rssportal.ru/feed/240378.xml",
-                             "http://feeds.feedburner.com/delogazeta/UGfI?format=xml"],
-             :other => ["http://feeds.feedburner.com/bashinform/all?format=xml"]}
 count80 = 56
 count20 = 14
 
@@ -111,33 +98,6 @@ namespace :training_feeds do
     end
   end
 
-
-  task :ishimbay => :environment do
-    #fetch_and_create_feed( rss_sources[:ishimbay], "Ишимбай" )
-    fetch_and_create_feed_by_sql( sql_sources[:ishimbay], "Ишимбай", 9 )
-  end
-
-
-  task :neftekamsk => :environment do
-    #fetch_and_create_feed( rss_sources[:neftekamsk], "Нефтекамск" )
-    fetch_and_create_feed_by_sql( sql_sources[:neftekamsk], "Нефтекамск", 4 )
-  end
-
-
-  task :salavat => :environment do
-    fetch_and_create_feed( rss_sources[:salavat], "Салават" )
-  end
-
-
-  task :ufa => :environment do
-    fetch_and_create_feed( rss_sources[:ufa], "Уфа" )
-  end
-
-
-  task :sterlitamak => :environment do
-    fetch_and_create_feed( rss_sources[:sterlitamak], "Стерлитамак" )
-  end
-
 end
 
 
@@ -152,8 +112,9 @@ namespace :production_feeds do
   end
 
 
+  #NOTE: Bad feelings take me when I look at this function!
   def production_satisfaction?(entry)
-    regexp = Regexp.new Settings.bayes.regexp.values.collect{|e| e[0]}.join("|")
+    regexp = Regexp.new Settings.bayes.regexp.values.join("|")
     str = entry.title + " " + entry.summary
     not str.scan(regexp).empty?
   end
@@ -162,7 +123,7 @@ namespace :production_feeds do
   task :fetch_and_classify => :environment do
     max_fetched = 15
     fetched = 0
-    paths = rss_sources.values.flatten
+    paths = FeedSource.pluck(:url)
     feed = Feedzirra::Feed.fetch_and_parse( paths )
     paths.each do |path|      
       begin
@@ -170,7 +131,7 @@ namespace :production_feeds do
           if production_satisfaction?( entry )
             create_production_feed( entry ) 
             fetched += 1
-          end 
+          end
           break if fetched >= max_fetched       
         end        
       rescue Exception => e
@@ -178,7 +139,7 @@ namespace :production_feeds do
       end
       fetched = 0
     end
-    Rake::Task['bayes:classify_fetched'].invoke
+    Rake::Task['classifier:classify_fetched'].invoke
   end
 end
 
