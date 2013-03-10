@@ -120,6 +120,46 @@ namespace :production_feeds do
   end
 
 
+  task :fetch_outlier_feeds => :environment do
+    paths = ["http://news.yandex.ru/world.rss", "http://news.yandex.ru/health.rss", "http://news.yandex.ru/science.rss",
+            "http://news.yandex.ru/business.rss", "http://news.yandex.ru/computers.rss",  "http://news.yandex.ru/culture.rss"]            
+    feed = Feedzirra::Feed.fetch_and_parse( paths )
+    paths.each do |path| 
+      begin      
+        feed[path].entries.each do |entry|
+          if not production_satisfaction?( entry ) 
+            create_production_feed(entry, {:mark_list => ["outlier"]})
+          end
+        end
+      rescue Exception => e 
+        p ["Error in production_feeds:fetch_outlier_feeds #{path}", e]
+      end    
+    end
+  end
+
+
+  task :fetch_unsatisfaction_feeds => :environment do
+    max_fetched = 50
+    paths = FeedSource.pluck(:url)
+    feed = Feedzirra::Feed.fetch_and_parse( paths )
+    paths.each do |path|  
+      fetched = 0  
+      begin       
+        feed[path].entries.each do |entry|
+          if not production_satisfaction?( entry )
+            create_production_feed( entry, {:mark_list => ["unsatisfaction"]} ) 
+            fetched += 1
+          end
+          break if fetched >= max_fetched  
+        end
+      rescue Exception => e 
+        p ["Error in production_feeds:fetch_unsatisfaction_feeds #{path}", e]
+      end       
+    end
+  end
+
+
+
   task :fetch_and_classify => :environment do
     max_fetched = 15
     fetched = 0

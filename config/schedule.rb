@@ -29,7 +29,13 @@ set :environment, 'production'
 
 
 every 3.minutes do
-   rake "production_feeds:fetch_and_classify"
+  rake "production_feeds:fetch_and_classify"
+end
+
+
+every 5.minutes do
+  rake "production_feeds:fetch_outlier_feeds"
+  rake "production_feeds:fetch_unsatisfaction_feeds"
 end
 
 
