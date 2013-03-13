@@ -29,6 +29,8 @@ gem "naive_bayes", :git => "git://github.com/sld/naive_bayes.git"
 
 gem "feedbacks", :git => "git://github.com/sld/feedbacks.git"
 
+gem 'ruby-stemmer', '>=0.8.3', :require => 'lingua/stemmer'
+
 
 group :assets do
   gem 'sass-rails',   '~> 3.2.3'

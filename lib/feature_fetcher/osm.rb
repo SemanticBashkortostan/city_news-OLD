@@ -10,6 +10,7 @@ module FeatureFetcher
     SALAVAT_BOUNDING_BOX = {:top => 53.3862, :left => 55.8489, :bottom => 53.3054, :right => 55.999}
     STERLITAMAK_BOUNDING_BOX = {:top => 53.7523, :left => 55.7659, :bottom => 53.5619, :right => 56.1744}
     NEFTEKAMSK_BOUNDING_BOX = {:top => 56.1428, :left => 54.1406, :bottom => 55.9649, :right => 54.4221}
+    UFA_BOUNDING_BOX = {:top => 54.8943, :left => 55.7638, :bottom => 54.5258, :right => 56.21}
 
 
     # +bounding_box+ is a Hash, look at up
@@ -28,6 +29,7 @@ module FeatureFetcher
 
 
     # Возвращает массив с элементами вида - [name, amenity, osm_id]
+    # где name.length > 2
     def get_features
       xmlfeed = Nokogiri::XML(open(@filename))
       rows = xmlfeed.xpath("//*[@k=\"name\"]")
@@ -37,7 +39,7 @@ module FeatureFetcher
         osm_id = row.parent.attributes["id"].value
         amenity = row.parent.xpath("tag[@k=\"amenity\"]").first
         amenity = amenity.attributes["v"].value if amenity
-        features << [name, amenity, osm_id]
+        features << [name, amenity, osm_id] if name.length > 2
       end                
       return features
     end

@@ -250,6 +250,7 @@ GEM
       rspec-core (~> 2.12.0)
       rspec-expectations (~> 2.12.0)
       rspec-mocks (~> 2.12.0)
+    ruby-stemmer (0.9.3)
     ruby_parser (3.0.4)
       sexp_processor (~> 4.1)
     rubyzip (0.9.9)
@@ -349,6 +350,7 @@ DEPENDENCIES
   rails (= 3.2.12)
   rolify (>= 3.2.0)
   rspec-rails (>= 2.11.4)
+  ruby-stemmer (>= 0.8.3)
   ruby_parser (>= 3.0.1)
   russian
   rvm-capistrano

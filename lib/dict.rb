@@ -19,6 +19,6 @@ class Dict
   def filter_string( string )
     words_regexp = /[[:word:]]+/ 
     stemmer= Lingua::Stemmer.new(:language => "ru")  
-     string.scan( words_regexp ).map{|word| stemmer.stem( word )}.join(" ").mb_chars.downcase.to_s
+    string.scan( words_regexp ).map{|word| stemmer.stem( word )}.join(" ").mb_chars.downcase.to_s
   end
 end
