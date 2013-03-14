@@ -39,7 +39,7 @@ every 5.minutes do
 end
 
 
-every 10.minutes do
+every 31.minutes do
   rake "classifier:train_by_production_data"
 end
 
