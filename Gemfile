@@ -19,6 +19,7 @@ gem "settingslogic"
 gem "acts-as-taggable-on"
 gem "simpleidn"
 gem 'whenever', :require => false
+gem 'clockwork'
 gem 'russian'
 gem 'exception_notification'
 
