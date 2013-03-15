@@ -18,7 +18,6 @@ gem "feedzirra", "~> 0.2.0.rc2"
 gem "settingslogic"
 gem "acts-as-taggable-on"
 gem "simpleidn"
-gem 'whenever', :require => false
 gem 'clockwork'
 gem 'russian'
 gem 'exception_notification'
