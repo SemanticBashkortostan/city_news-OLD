@@ -27,23 +27,3 @@ set :cron_log, "log/cron.log"
 set :job_template, "bash -l -c -i 'source /home/mineralka/.rvm/environments/ruby-1.9.3-p374 && :job' "
 set :environment, 'production'
 
-
-every 3.minutes do
-  rake "production_feeds:fetch_and_classify"
-end
-
-
-every 5.minutes do
-  rake "production_feeds:fetch_outlier_feeds"
-  rake "production_feeds:fetch_unsatisfaction_feeds"
-end
-
-
-every 31.minutes do
-  rake "classifier:train_by_production_data"
-end
-
-
-every 1.day, :at => '5:00 am' do
-   rake "-s sitemap:refresh"
-end
