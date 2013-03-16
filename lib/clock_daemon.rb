@@ -5,5 +5,7 @@ require File.expand_path('../../config/environment', __FILE__)
 
 Daemons.run_proc("clock") do 
   Dir.chdir(Rails.root)
-  system "bundle exec clockwork #{Rails.root}/lib/clock.rb"
+  
+  require "#{Rails.root}/lib/clock.rb"
+  Clockwork::run  
 end
