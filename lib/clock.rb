@@ -1,9 +1,9 @@
+require 'clockwork'
+
 require File.expand_path('../../config/boot',        __FILE__)
 require File.expand_path('../../config/environment', __FILE__)
 require "#{Rails.root}/lib/scheduler/classifier"
 require "#{Rails.root}/lib/scheduler/production_feeds_fetcher"
-
-require 'clockwork'
 
 include Clockwork
 
