@@ -31,6 +31,9 @@ gem "feedbacks", :git => "git://github.com/sld/feedbacks.git"
 
 gem 'ruby-stemmer', '>=0.8.3', :require => 'lingua/stemmer'
 
+gem 'sunspot_rails'
+gem 'sunspot_solr' # optional pre-packaged Solr distribution for use in development
+
 
 group :assets do
   gem 'sass-rails',   '~> 3.2.3'

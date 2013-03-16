@@ -15,6 +15,13 @@ class Feed < ActiveRecord::Base
   scope :unclassified_fetched, tagged_with(["fetched", "production"], :match_all => true).without_uncorrect_tags.where(:text_class_id => nil)
   scope :was_trainers, lambda{ |classifier_id| includes(:classifiers).where(:classifiers_feeds => {:classifier_id => classifier_id}) }
 
+
+  searchable do
+    text :title, :stored => true    
+    text :summary, :stored => true    
+  end
+
+
   before_validation :convert_if_punycode_url
   before_save :strip_html_tags
   before_save :set_default_published_at
