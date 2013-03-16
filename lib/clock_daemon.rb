@@ -1,11 +1,10 @@
 require 'daemons'
-require File.expand_path('../../config/boot',        __FILE__)
-require File.expand_path('../../config/environment', __FILE__)
 
+ENV["APP_ROOT"] ||= File.expand_path("#{File.dirname(__FILE__)}/..") 
 
-Daemons.run_proc("clock") do 
-  Dir.chdir(Rails.root)
-  
-  require "#{Rails.root}/lib/clock.rb"
+Daemons.run_proc("clock") do
+  Dir.chdir(ENV["APP_ROOT"])
+
+  require "#{ENV["APP_ROOT"]}/lib/clock.rb"
   Clockwork::run  
 end
