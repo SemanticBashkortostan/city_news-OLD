@@ -10,7 +10,7 @@ class Scheduler::Classifier
       end
       feed.mark_list += tag_list
       feed.text_class = TextClass.find classify_info[:class]
-      feed.save!
+      feed.save
     end
   end
 
