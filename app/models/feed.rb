@@ -1,3 +1,4 @@
+#coding: utf-8
 class Feed < ActiveRecord::Base
   attr_accessible :published_at, :summary, :text_class_id, :title, :url, :text_class, :mark_list
 
@@ -42,6 +43,23 @@ class Feed < ActiveRecord::Base
       result << data.all
     end
     result.flatten
+  end
+
+
+  def feature_vectors_for_re
+    other_cities_regexp = Hash[(TextClass.pluck(:name) - [text_class.name]).map{|e| [TextClass.find_by_name(e).id, Regexp.new(Settings.bayes.regexp[e]) ]}]
+    city_lexer = CityLexer.new({ :text_class_id => text_class.id, :main_city_regexp => Regexp.new( Settings.bayes.regexp[text_class.name] ), 
+                                 :other_classes => other_cities_regexp } )
+    city_lexer.city_news_mode = 1
+
+    sentence_split_regexp = /[.!?]/
+    text = title.to_s + "." + summary.to_s
+            
+    feature_vectors = []
+    text.split(sentence_split_regexp).each_with_index do |sentence, ind|
+      feature_vectors << city_lexer.get_tokens_hash( sentence, :sent_ind => ind )
+    end
+    p feature_vectors
   end
 
 
