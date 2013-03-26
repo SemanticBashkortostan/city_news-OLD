@@ -1,4 +1,6 @@
 #coding: utf-8
+require 'set'
+
 class CityLexer
 
 
@@ -12,6 +14,27 @@ class CityLexer
     @big_letters = /\b[А-ЯA-Z]/
     @letters = /[[:word:]]/
 
+    @stop_words = %w( большой   бы
+                      быть  в   весь
+                      вот   все   всей
+                      вы  говорить  год
+                      да  для   до
+                      еще   же  знать
+                      и   из  к
+                      как   который 
+                      мы  на  наш
+                      не  него  нее
+                      нет   них   но
+                      о   один  она
+                      они   оно   оный
+                      от  ото   по
+                      с   свой  себя
+                      сказать   та  такой
+                      только  тот   ты
+                      у   что   это
+                      этот  я )
+    @stop_words = @stop_words.to_set
+
     @city_news_mode = 0
     @city_info = {:text_class_id => options[:text_class_id], :regexp => options[:main_city_regexp], :other_classes => options[:other_classes]}        
   end
@@ -24,7 +47,7 @@ class CityLexer
 
   def get_tokens_hash text, options={}
     text = text.clone.squeeze(" ")
-    text[text.length-1] = "." if text[text.length-1] =~ /[[:word:]]/
+    text[text.length] = "." if text[text.length-1] =~ /[[:word:]]/
 
     token = ""
     tokens_hash = {}
@@ -37,7 +60,7 @@ class CityLexer
     i = -1
     while i < text.length - 1
       i += 1
-      if token.empty?
+      if token.empty?        
         if @quote_syms.include?( text[i] )
           # Priority!
           #REFACTOR!
@@ -108,16 +131,30 @@ class CityLexer
 
 
   def get_token_with_token_num(token, token_num, comma, text, options={})
+    is_first_token = (token_num == 0)
+
     left_context = text.scan(left_regexp(token)).flatten.first
     right_context = text.scan(right_regexp(token)).flatten.last
     token_num += 1 if right_context
+
+    # If first word in token is stop word then delete it
+    if is_first_token
+      splitted_tokens = token.split(" ")
+      if @stop_words.include?( splitted_tokens.first.mb_chars.downcase.to_s )
+        token[0...splitted_tokens.first.length] = "" 
+      else 
+        options.merge!( {:is_first_token => true} )
+      end
+      return [{}, token_num+1] if token.empty?
+    end
+
     hash = { :comma => comma, :token_pos => token_num, :left_context => left_context, :right_context => right_context }
 
-    hash.merge!(options) unless options.empty?
+    hash.merge!(options) unless options.empty?  
 
     if @city_news_mode == 1
       if !@city_info.empty? && token =~ @city_info[:regexp]
-        hash.merge!( {:text_class_id => @city_info[:text_class_id], :is_main_class =>  true} ) 
+        hash.merge!( {:text_class_id => @city_info[:text_class_id], :is_main_class => true} ) 
       else
         @city_info[:other_classes].each { |text_class_id, regexp|
           if token =~ regexp
@@ -127,7 +164,7 @@ class CityLexer
         }
       end
     end
-    [hash, token_num+1]
+    return [hash, token_num+1]
   end
 
 
