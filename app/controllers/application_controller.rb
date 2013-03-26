@@ -29,6 +29,7 @@ class ApplicationController < ActionController::Base
 
     respond_to do |format|
       format.html{ render :file => "#{Rails.root}/public/#{error}.html", :status => :not_found } 
+      format.any{ render :file => "#{Rails.root}/public/#{error}.html", :status => :not_found } 
     end  
   end
 
