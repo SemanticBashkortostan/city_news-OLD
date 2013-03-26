@@ -47,6 +47,67 @@ class Feed < ActiveRecord::Base
 
 
   def feature_vectors_for_re
+    raw_feature_vectors = get_raw_feature_vectors   
+    city_features, named_features = city_and_named_features(raw_feature_vectors)
+    get_features_for_classifier( city_features, named_features )
+  end
+
+
+
+  protected
+
+
+
+  def city_and_named_features(raw_feature_vectors)
+    city_features = []
+    named_features = []
+    raw_feature_vectors.each do |feature_vector|
+      if feature_vector[:text_class_id]
+        city_features << feature_vector
+      else
+        if feature_vector[:comma] 
+          feature_vector[:token].split(",").each do |uncomma_word|
+            cloned_fv = feature_vector.clone 
+            cloned_fv[:token] = uncomma_word
+            named_features << cloned_fv
+          end
+        else
+          named_features << feature_vector
+        end
+      end      
+    end
+    return [city_features, named_features]
+  end
+
+
+  def get_features_for_classifier city_features, named_features
+    classifier_features = []
+    has_other_cities = city_features.find{|e| e[:text_class_id] == text_class.id} && city_features.find{|e| e[:text_class_id] > 0 && e[:text_class_id] != text_class.id }
+    city_features.each do |city_hash|
+      named_features.each do |named_hash|
+        in_one_sent = city_hash[:sent_ind] == named_hash[:sent_ind]
+        distance = (city_hash[:token_pos] - named_hash[:token_pos]).abs        
+        tc_word_position = ( (city_hash[:token_pos]+1)*city_hash[:sent_ind] > (named_hash[:token_pos]+1)*named_hash[:sent_ind] )
+        tc_same_as_feed = (city_hash[:text_class_id] == text_class.id)
+
+        feature_hash = {           
+                          :text_class_id => city_hash[:text_class_id], :tc_is_first_token => city_hash[:is_first_token], :tc_token => city_hash[:token],
+                          :tc_right_context => city_hash[:right_context], :tc_left_context => city_hash[:left_context], :tc_quoted => city_hash[:quoted],
+
+                          :has_other_cities => has_other_cities, :in_one_sent => in_one_sent, :distance => distance, :tc_word_position => tc_word_position,
+                          :tc_same_as_feed => tc_same_as_feed,
+
+                          :ne_is_first_token => named_hash[:is_first_token], :ne_token => named_hash[:token], :ne_right_context => named_hash[:right_context], 
+                          :ne_left_context => named_hash[:left_context], :ne_quoted => named_hash[:quoted]  
+                       }
+        classifier_features << feature_hash
+      end
+    end
+    return classifier_features
+  end
+
+
+  def get_raw_feature_vectors
     other_cities_regexp = Hash[(TextClass.pluck(:name) - [text_class.name]).map{|e| [TextClass.find_by_name(e).id, Regexp.new(Settings.bayes.regexp[e]) ]}]
     city_lexer = CityLexer.new({ :text_class_id => text_class.id, :main_city_regexp => Regexp.new( Settings.bayes.regexp[text_class.name] ), 
                                  :other_classes => other_cities_regexp } )
@@ -59,11 +120,8 @@ class Feed < ActiveRecord::Base
     text.split(sentence_split_regexp).each_with_index do |sentence, ind|
       feature_vectors << city_lexer.get_tokens_hash( sentence, :sent_ind => ind )
     end
-    p feature_vectors
+    return feature_vectors
   end
-
-
-  protected
 
 
   def summary_or_title_presence

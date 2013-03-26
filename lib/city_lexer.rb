@@ -148,11 +148,12 @@ class CityLexer
       return [{}, token_num+1] if token.empty?
     end
 
-    hash = { :comma => comma, :token_pos => token_num, :left_context => left_context, :right_context => right_context }
+    hash = { :comma => comma, :token_pos => token_num, :left_context => left_context, :right_context => right_context, :token => token }
 
     hash.merge!(options) unless options.empty?  
 
-    if @city_news_mode == 1
+    # If we in city news mode and token is not 'comma' then add text class info into token's hash
+    if @city_news_mode == 1 && !comma
       if !@city_info.empty? && token =~ @city_info[:regexp]
         hash.merge!( {:text_class_id => @city_info[:text_class_id], :is_main_class => true} ) 
       else
