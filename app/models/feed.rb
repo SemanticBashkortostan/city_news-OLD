@@ -54,10 +54,6 @@ class Feed < ActiveRecord::Base
 
 
 
-  protected
-
-
-
   def city_and_named_features(raw_feature_vectors)
     city_features = []
     named_features = []
@@ -118,9 +114,9 @@ class Feed < ActiveRecord::Base
             
     feature_vectors = []
     text.split(sentence_split_regexp).each_with_index do |sentence, ind|
-      feature_vectors << city_lexer.get_tokens_hash( sentence, :sent_ind => ind )
+      feature_vectors << city_lexer.get_tokens_hash( sentence, :sent_ind => ind ).values
     end
-    return feature_vectors
+    return feature_vectors.flatten
   end
 
 
