@@ -46,9 +46,10 @@ class Feed < ActiveRecord::Base
   end
 
 
-  def feature_vectors_for_re
+  def feature_vectors_for_relation_extraction
     raw_feature_vectors = get_raw_feature_vectors   
     city_features, named_features = city_and_named_features(raw_feature_vectors)
+    return nil unless city_features.present? && named_features.present?    
     get_features_for_classifier( city_features, named_features )
   end
 
@@ -76,7 +77,7 @@ class Feed < ActiveRecord::Base
   end
 
 
-  def get_features_for_classifier city_features, named_features
+  def get_features_for_classifier city_features, named_features    
     classifier_features = []
     has_other_cities = city_features.find{|e| e[:text_class_id] == text_class.id} && city_features.find{|e| e[:text_class_id] > 0 && e[:text_class_id] != text_class.id }
     city_features.each do |city_hash|

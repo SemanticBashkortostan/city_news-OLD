@@ -1,54 +1,38 @@
 #coding: utf-8
 
 module FeatureFetcher
-
-
   class RelationExtractor
-    DEFAULT_SAMPLES = [["Уф", "Салават Юлаев"], ["Стерлит", "Сода"], 
-                       ["Салават", "Газпром Нефтехим"], ["Уф", "Урал"], ["Уф", "Ялалов"]]
-
-    def initialize samples=DEFAULT_SAMPLES
-      @training_samples = samples 
-    end
 
 
-    def extract_relations
-      @training_samples.each do |sample|
-        search = Feed.solr_search do 
-          keywords( sample.join(" ") ) do
-            highlight :title
-            highlight :summary
-          end
-          paginate :page => 1, :per_page => 999999 
-        end
+    def form_training_set
+      grouped_by_city_training_set = {}
+      negative_training_set = []
+      all_text_classes = TextClass.all
 
-        hits = {:title => [], :summary => []}
-        search.hits.each do |hit|
-          hit.highlights(:title).each do |highlight|
-            hl_str = [0, nil, hit.primary_key]
-            hl_str[1] = highlight.format do |word|                           
-              word =~ Regexp.new(sample[0]) ? hl_str[0] = 0 : hl_str[0] = 1                              
-              "*#{word}*"
-            end            
-            hits[:title] << hl_str
-          end
+      Feed.all.each do |feed|
+        feed_feature_vectors = feed.feature_vectors_for_relation_extraction
+        next unless feed_feature_vectors 
+        feed_feature_vectors.each { |fv|
+          all_text_classes.each do |tc|
+            if fv[:tc_name] =~ Regexp.new( Settings.bayes.regexp[tc.name] ) 
+              if city_dictionary_lemmas.include?( fv[:ne_name_lemma] )
+                grouped_by_city_training_set[tc.id] ||= []
+                grouped_by_city_training_set[tc.id] << fv
+                break
+              else
+                negative_training_set << fv
+                break
+              end
 
-          hit.highlights(:summary).each do |highlight|
-            hl_str = [0, nil, hit.primary_key]
-            hl_str[1] = highlight.format do |word|                           
-              word =~ Regexp.new(sample[0]) ? hl_str[0] = 0 : hl_str[0] = 1                              
-              "*#{word}*"
             end
-            hits[:summary] << [hit.stored(:summary), hl_str]
-          end
-        end
+          end 
+        }             
+      end
 
-        p hits
-        gets
-      end      
-
+      p grouped_by_city_training_set
+      p negative_training_set
     end
+
 
   end
-
 end
