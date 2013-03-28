@@ -33,6 +33,7 @@ module FeatureFetcher
 
 
     def form_training_set
+      # includes :text_classes and maybe regexp into raw_feature_vector in Feed
       grouped_by_city_training_set = {}
       negative_training_set = []
       all_text_classes = TextClass.all
@@ -43,7 +44,7 @@ module FeatureFetcher
         dict_lemmas[tc.id] = dictionaries[tc.id].collect{|k,v| v[:lemma]}.compact.to_set
       end
 
-      Feed.all.each do |feed|
+      Feed.where(:text_class_id => TextClass.all).all.each do |feed|
         feed_feature_vectors = feed.feature_vectors_for_relation_extraction
         next unless feed_feature_vectors 
         feed_feature_vectors.each { |fv|
