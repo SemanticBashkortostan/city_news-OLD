@@ -1,3 +1,5 @@
+#coding: utf-8
+
 class Dict
   def initialize
     
@@ -16,7 +18,38 @@ class Dict
   end
 
 
-  def filter_string( string )
+  def lemma_dict( features )
+    lemma_dict = {}
+    features.each do |feature_arr|
+      feature, quoted = filter_for_lemma feature_arr[0]
+      if feature.is_a? Array
+        feature.each { |f| lemma_dict[feature] = {:lemma => Lemmatizer.lemmatize( feature, quoted )} }
+      else 
+        lemma_dict[feature] = {:lemma => Lemmatizer.lemmatize( feature, quoted )}      
+      end
+    end
+    return lemma_dict
+
+  end
+
+
+  def filter_for_lemma string
+    big_words_regexp = /\b[А-ЯA-Z][[:word:]]*/
+    quot_regexp = /&quot;(.*)&quot;/    
+    token = ""
+    quoteds = string.scan( quot_regexp )
+    quoted = false
+    if not quoteds.empty?      
+      token = quoteds
+      quoted = true
+    else
+      token = string.scan( big_words_regexp ).join(" ")
+    end
+    return [token, quoted]
+  end
+
+
+  def filter_string( string )  
     words_regexp = /[[:word:]]+/ 
     stemmer= Lingua::Stemmer.new(:language => "ru")  
     string.scan( words_regexp ).map{|word| stemmer.stem( word )}.join(" ").mb_chars.downcase.to_s

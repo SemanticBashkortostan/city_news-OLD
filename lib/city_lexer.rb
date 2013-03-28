@@ -72,6 +72,7 @@ class CityLexer
             end
           elsif not is_colon_direct_speech?(i, text)
             quote_end = false
+            # We're write *quote* token for search left and right context
             token << text[i]
           else 
             is_direct_speech = true
@@ -126,28 +127,45 @@ class CityLexer
         end
       end
     end
+    tokens_hash.delete("")
     return tokens_hash
   end
 
 
-  def get_token_with_token_num(token, token_num, comma, text, options={})
+  def valid_for_regexp? token
+    if not (token.empty? || token.include?(")") || token.include?("(") )
+      return true
+    else
+      return false
+    end
+  end
+
+  def get_token_with_token_num(token, token_num, comma, text, tmp_options={})
     is_first_token = (token_num == 0)
 
-    left_context = text.scan(left_regexp(token)).flatten.first
-    right_context = text.scan(right_regexp(token)).flatten.last
+    if valid_for_regexp?(token)
+      left_context = text.scan(left_regexp(token)).flatten.first
+      right_context = text.scan(right_regexp(token)).flatten.last
+    end
     token_num += 1 if right_context
 
+    options = tmp_options
     # If first word in token is stop word then delete it
     if is_first_token
       splitted_tokens = token.split(" ")
       if @stop_words.include?( splitted_tokens.first.mb_chars.downcase.to_s )
         token[0...splitted_tokens.first.length] = "" 
       else 
-        options.merge!( {:is_first_token => true} )
+        options = tmp_options.merge( {:is_first_token => is_first_token} )
       end
       return [{}, token_num+1] if token.empty?
     end
 
+    if options[:quoted] == true
+      token[0]=""
+      token[token.length-1]="" 
+      token.strip!
+    end
     hash = { :comma => comma, :token_pos => token_num, :left_context => left_context, :right_context => right_context, :token => token }
 
     hash.merge!(options) unless options.empty?  

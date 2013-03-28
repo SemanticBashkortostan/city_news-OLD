@@ -47,6 +47,7 @@ class Feed < ActiveRecord::Base
 
 
   def feature_vectors_for_relation_extraction
+    return nil unless text_class
     raw_feature_vectors = get_raw_feature_vectors   
     city_features, named_features = city_and_named_features(raw_feature_vectors)
     return nil unless city_features.present? && named_features.present?    
@@ -95,7 +96,8 @@ class Feed < ActiveRecord::Base
                           :tc_same_as_feed => tc_same_as_feed,
 
                           :ne_is_first_token => named_hash[:is_first_token], :ne_token => named_hash[:token], :ne_right_context => named_hash[:right_context], 
-                          :ne_left_context => named_hash[:left_context], :ne_quoted => named_hash[:quoted]  
+                          :ne_left_context => named_hash[:left_context], :ne_quoted => named_hash[:quoted], 
+                          :ne_lemma => Lemmatizer.lemmatize( named_hash[:token], named_hash[:quoted] )
                        }
         classifier_features << feature_hash
       end
