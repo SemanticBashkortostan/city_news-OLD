@@ -80,7 +80,7 @@ class Feed < ActiveRecord::Base
 
   def get_features_for_classifier city_features, named_features    
     classifier_features = []
-    has_other_cities = city_features.find{|e| e[:text_class_id] == text_class.id} && city_features.find{|e| e[:text_class_id] > 0 && e[:text_class_id] != text_class.id }
+    has_other_cities = city_features.find{|e| e[:text_class_id] > 0 && e[:text_class_id] != text_class.id }.present?
     city_features.each do |city_hash|
       named_features.each do |named_hash|
         in_one_sent = city_hash[:sent_ind] == named_hash[:sent_ind]
@@ -88,6 +88,7 @@ class Feed < ActiveRecord::Base
         tc_word_position = ( (city_hash[:token_pos]+1)*city_hash[:sent_ind] > (named_hash[:token_pos]+1)*named_hash[:sent_ind] )
         tc_same_as_feed = (city_hash[:text_class_id] == text_class.id)
 
+        # *distance* needs to be discretized!
         feature_hash = {           
                           :text_class_id => city_hash[:text_class_id], :tc_is_first_token => city_hash[:is_first_token], :tc_token => city_hash[:token],
                           :tc_right_context => city_hash[:right_context], :tc_left_context => city_hash[:left_context], :tc_quoted => city_hash[:quoted],
@@ -117,6 +118,8 @@ class Feed < ActiveRecord::Base
             
     feature_vectors = []
     text.split(sentence_split_regexp).each_with_index do |sentence, ind|
+      sentence.gsub!(/(&laquo;)|(&raquo;)|(&quot;)/, '"')      
+      sentence.gsub!(/[()]/, " ")      
       feature_vectors << city_lexer.get_tokens_hash( sentence, :sent_ind => ind ).values
     end
     return feature_vectors.flatten

@@ -5,7 +5,9 @@ class Lemmatizer
     lemmatized = []
     words = token.split(" ")
     words.each do |word|
-      lemmatized << (`./lib/turglem-client #{word}`).split(" ")[1]
+      lemm_word = (`./lib/turglem-client #{word}`).split(" ")[1]
+      lemm_word = word if lemm_word.blank?
+      lemmatized << lemm_word
     end
     return lemmatized.join(" ")
   end
