@@ -20,7 +20,7 @@ class ReBayesTest
     @negative_set.each do |example|
       fv = make_feature_vector(example)  
       @nb.train(fv, -1)
-    end
+    end    
   end
 
 
@@ -31,14 +31,14 @@ class ReBayesTest
     @test_positive_set.each do |example|
       fv = make_feature_vector(example) 
       classified = @nb.classify(fv)
-      p [1, classified[:class]]
+      p [1, classified[:class], example] if classified[:class] == -1
       confusion_matrix[1][classified[:class]] = confusion_matrix[1][classified[:class]].to_i + 1
     end
 
     @test_negative_set.each do |example|
       fv = make_feature_vector(example) 
       classified = @nb.classify(fv)
-      p [-1, classified[:class]]
+      p [-1, classified[:class]] 
       confusion_matrix[-1][classified[:class]] = confusion_matrix[-1][classified[:class]].to_i + 1
     end
     p confusion_matrix
@@ -56,11 +56,12 @@ class ReBayesTest
   def make_feature_vector example
     # without :distance 
     ending_keys = [:tc_token, :tc_right_context, :tc_left_context, :ne_token, :ne_right_context, :ne_left_context]
+    to_quant_keys = [:distance]
     feature_keys = [           
                           :text_class_id, :tc_is_first_token, :tc_token,
                           :tc_right_context, :tc_left_context, :tc_quoted,
                           :has_other_cities, :in_one_sent, :tc_word_position,
-                          :tc_same_as_feed,
+                          :tc_same_as_feed, :distance,
                           :ne_is_first_token, :ne_token, :ne_right_context, 
                           :ne_left_context, :ne_quoted
                     ]
@@ -72,6 +73,14 @@ class ReBayesTest
         else
           example_val = example[key][-1]
         end
+      elsif example[key] && to_quant_keys.include?(key)
+        if key == :distance
+          case example[key]
+            when 0..2 then example_val = :small 
+            when 3..4 then example_val = :mid 
+            else example_val = :big
+          end
+        end 
       else
         example_val = example[key]
       end
@@ -83,9 +92,28 @@ class ReBayesTest
   end
 
 
+  def filter_training_set
+    # filtered_positive_set = [].to_set
+    # @positive_set.each_with_index do |example, i|
+    #   puts "#{i}/#{@positive_set.count}"
+    #   fv = make_feature_vector(example)  
+    #   classified = @nb.classify(fv)
+    #   filtered_positive_set << example if classified[:class] == 1
+    # end              
+    @positive_set = load_set "filtered_positive_train"
+    @negative_set = load_set "filtered_negative_train"    
+    @negative_set = @negative_set[0..@positive_set.count] if @negative_set.count > @positive_set.count    
+    @nb = NaiveBayes::NaiveBayes.new 
+  end
+
+
   def self.run
     rbt = ReBayesTest.new
     rbt.train
+    
+    #rbt.filter_training_set    
+    #rbt.train
+    
     rbt.test
   end
 
@@ -154,7 +182,8 @@ class ReBayesTest
                                 {:text_class_id=>4, :tc_is_first_token=>nil, :tc_token=>"Уфимского", :tc_right_context=>"района", :tc_left_context=>"администрации ", :tc_quoted=>nil, :has_other_cities=>false, :in_one_sent=>false, :distance=>3, :tc_word_position=>false, :tc_same_as_feed=>true, :ne_is_first_token=>true, :ne_token=>"Михаил Давыдов", :ne_right_context=>nil, :ne_left_context=>nil, :ne_quoted=>nil, :ne_lemma=>"МИХАИЛ ДАВЫДОВ"},
                                 {:text_class_id=>4, :tc_is_first_token=>nil, :tc_token=>" Уфу", :tc_right_context=>"он", :tc_left_context=>nil, :tc_quoted=>nil, :has_other_cities=>false, :in_one_sent=>false, :distance=>2, :tc_word_position=>true, :tc_same_as_feed=>true, :ne_is_first_token=>nil, :ne_token=>"Ильдар Абдразаков", :ne_right_context=>"работает", :ne_left_context=>"время ", :ne_quoted=>nil, :ne_lemma=>"ИЛЬДАР АБДРАЗАК"},
                                 {:text_class_id=>4, :tc_is_first_token=>nil, :tc_token=>"Уфе", :tc_right_context=>nil, :tc_left_context=>"в ", :tc_quoted=>nil, :has_other_cities=>false, :in_one_sent=>true, :distance=>3, :tc_word_position=>true, :tc_same_as_feed=>true, :ne_is_first_token=>nil, :ne_token=>"Динамо", :ne_right_context=>"приложит", :ne_left_context=>"стадиона ", :ne_quoted=>true, :ne_lemma=>"Динамо"},
-                                {:text_class_id=>1, :tc_is_first_token=>true, :tc_token=>"Ишимбай", :tc_right_context=>"37", :tc_left_context=>nil, :tc_quoted=>nil, :has_other_cities=>false, :in_one_sent=>true, :distance=>2, :tc_word_position=>false, :tc_same_as_feed=>true, :ne_is_first_token=>nil, :ne_token=>"Юрий Малкин", :ne_right_context=>"осуждён", :ne_left_context=>"летний ", :ne_quoted=>nil, :ne_lemma=>"ЮРИЙ МАЛКИН"}
+                                {:text_class_id=>1, :tc_is_first_token=>true, :tc_token=>"Ишимбай", :tc_right_context=>"37", :tc_left_context=>nil, :tc_quoted=>nil, :has_other_cities=>false, :in_one_sent=>true, :distance=>2, :tc_word_position=>false, :tc_same_as_feed=>true, :ne_is_first_token=>nil, :ne_token=>"Юрий Малкин", :ne_right_context=>"осуждён", :ne_left_context=>"летний ", :ne_quoted=>nil, :ne_lemma=>"ЮРИЙ МАЛКИН"},
+                                {:text_class_id=>4, :tc_is_first_token=>true, :tc_token=>"Уфимская", :tc_right_context=>"художница", :tc_left_context=>nil, :tc_quoted=>nil, :has_other_cities=>false, :in_one_sent=>false, :distance=>0, :tc_word_position=>false, :tc_same_as_feed=>true, :ne_is_first_token=>nil, :ne_token=>"Олеся Сапожкова", :ne_right_context=>nil, :ne_left_context=>"художница ", :ne_quoted=>nil, :ne_lemma=>"ОЛЕСЬ САПОЖКОВА"}
                                 ]
 
     positive_filename = "positive_re_set"
@@ -165,6 +194,7 @@ class ReBayesTest
     @negative_set = load_set negative_filename   
     @test_positive_set = load_set( test_positive_filename )    - @not_positive_arr  
     @test_negative_set = load_set( test_negative_filename )    - @not_negative_arr
+    @test_positive_set = @test_positive_set[0...@test_negative_set.count]
 
 
     @positive_set = @positive_set - @test_positive_set    

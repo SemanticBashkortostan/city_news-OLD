@@ -37,6 +37,26 @@ module FeatureFetcher
     end
 
 
+    def get_stem_dicts
+      filename = 'stem_vocabolary_hash'
+      return Marshal.load (File.binread(filename)) if File.exist?( filename ) 
+
+      vocabolary = {}
+      @osm_arr.each do |klass_id, params|
+        print "#{klass_id} processing..."
+        osm_feature_fetcher = FeatureFetcher::Osm.new params[1], params[0]
+        dict = Dict.new.stem_dict osm_feature_fetcher.get_features
+        vocabolary[klass_id] = dict
+      end
+
+      File.open(filename,'wb') do |f|
+        f.write Marshal.dump(vocabolary)
+      end
+
+      return vocabolary
+    end
+
+
     def form_training_set
       # includes :text_classes and maybe regexp into raw_feature_vector in Feed
       grouped_by_city_training_set = {}
@@ -44,6 +64,8 @@ module FeatureFetcher
       text_classes = TextClass.where :id => @text_class_ids
 
       dictionaries = get_dictionaries
+      #dictionaries = get_stem_dicts
+
       dict_lemmas = {}      
       text_classes.each do |tc|
         dict_lemmas[tc.id] = dictionaries[tc.id].collect{|k,v| v[:lemma]}.compact.to_set
