@@ -1,4 +1,4 @@
-class WordProccessor
+class WordProcessor
   def self.lemmatize( token, quoted=false )
     return token if quoted
     

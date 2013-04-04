@@ -18,18 +18,31 @@ class Dict
   end
 
 
+  def stem_dict( features )
+    stem_dict = {}
+    features.each do |feature_arr|
+      feature, quoted = filter_for_lemma feature_arr[0]      
+      if feature.is_a? Array 
+        feature.each{ |f| stem_dict[feature] = {:stem => WordProcessor.stem(feature, quoted) } }
+      else
+        stem_dict[feature] = { :stem => WordProcessor.stem(feature, quoted) }
+      end      
+    end
+    return stem_dict
+  end
+
+
   def lemma_dict( features )
     lemma_dict = {}
     features.each do |feature_arr|
       feature, quoted = filter_for_lemma feature_arr[0]
       if feature.is_a? Array
-        feature.each { |f| lemma_dict[feature] = {:lemma => Lemmatizer.lemmatize( feature, quoted )} }
+        feature.each { |f| lemma_dict[feature] = {:lemma => WordProcessor.lemmatize( feature, quoted )} }
       else 
-        lemma_dict[feature] = {:lemma => Lemmatizer.lemmatize( feature, quoted )}      
+        lemma_dict[feature] = {:lemma => WordProcessor.lemmatize( feature, quoted )}
       end
     end
     return lemma_dict
-
   end
 
 
