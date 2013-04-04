@@ -98,7 +98,7 @@ class Feed < ActiveRecord::Base
 
                           :ne_is_first_token => named_hash[:is_first_token], :ne_token => named_hash[:token], :ne_right_context => named_hash[:right_context], 
                           :ne_left_context => named_hash[:left_context], :ne_quoted => named_hash[:quoted], 
-                          :ne_lemma => Lemmatizer.lemmatize( named_hash[:token], named_hash[:quoted] )
+                          :ne_lemma => WordProcessor.lemmatize( named_hash[:token], named_hash[:quoted] ), :ne_stem => WordProcessor.stem( named_hash[:token], named_hash[:quoted] )
                        }
         classifier_features << feature_hash
       end

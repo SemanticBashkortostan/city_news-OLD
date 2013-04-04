@@ -1,4 +1,4 @@
-class Lemmatizer
+class WordProccessor
   def self.lemmatize( token, quoted=false )
     return token if quoted
     
@@ -10,5 +10,13 @@ class Lemmatizer
       lemmatized << lemm_word
     end
     return lemmatized.join(" ")
+  end
+
+
+  def self.stem(feature, quoted)
+    return feature if quoted
+    stemmed = Lingua.stemmer( feature.split(" "), :language => :ru )
+    return stemmed.join(" ") if stemmed.is_a?( Array )
+    return stemmed
   end
 end
