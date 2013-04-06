@@ -4,7 +4,8 @@ class ReBayesTest
   include Statistic
 
   attr_accessor :positive_set, :negative_set, :nb
-  def initialize
+  def initialize( name = "" )
+    @name = name
     make_train_and_test_sets
 
     @nb = NaiveBayes::NaiveBayes.new 
@@ -31,14 +32,20 @@ class ReBayesTest
     @test_positive_set.each do |example|
       fv = make_feature_vector(example) 
       classified = @nb.classify(fv)
-      p [1, classified[:class], example] if classified[:class] == -1
+      
+      #p [1, classified[:class]]
+      #p example if classified[:class] != 1
+      
       confusion_matrix[1][classified[:class]] = confusion_matrix[1][classified[:class]].to_i + 1
     end
 
     @test_negative_set.each do |example|
       fv = make_feature_vector(example) 
       classified = @nb.classify(fv)
-      p [-1, classified[:class]] 
+      
+      #p [-1, classified[:class]] 
+      #p example if classified[:class] != -1
+
       confusion_matrix[-1][classified[:class]] = confusion_matrix[-1][classified[:class]].to_i + 1
     end
     p confusion_matrix
@@ -49,21 +56,22 @@ class ReBayesTest
     p ["precision, recall", 1, precision(confusion_matrix, 1), recall(confusion_matrix, 1)]
     p ["precision, recall", -1, precision(confusion_matrix, -1), recall(confusion_matrix, -1)]
 
-    p ["accuracy", accuracy(confusion_matrix)]
+    p ["#{@name}accuracy", accuracy(confusion_matrix)]
+    print "\n"
   end
 
 
   def make_feature_vector example
     # without :distance 
-    ending_keys = [:tc_token, :tc_right_context, :tc_left_context, :ne_token, :ne_right_context, :ne_left_context]
+    ending_keys = [ :tc_right_context, :tc_left_context, :ne_right_context, :ne_left_context, :tc_token]
     to_quant_keys = [:distance]
     feature_keys = [           
-                          :text_class_id, :tc_is_first_token, :tc_token,
+                          :tc_is_first_token,
                           :tc_right_context, :tc_left_context, :tc_quoted,
                           :has_other_cities, :in_one_sent, :tc_word_position,
                           :tc_same_as_feed, :distance,
-                          :ne_is_first_token, :ne_token, :ne_right_context, 
-                          :ne_left_context, :ne_quoted
+                          :ne_is_first_token, :ne_right_context, 
+                          :ne_left_context, :ne_quoted, :tc_token
                     ]
     feature_vector = []    
     feature_keys.each do |key|
@@ -100,22 +108,124 @@ class ReBayesTest
     #   classified = @nb.classify(fv)
     #   filtered_positive_set << example if classified[:class] == 1
     # end              
-    @positive_set = load_set "filtered_positive_train"
-    @negative_set = load_set "filtered_negative_train"    
-    @negative_set = @negative_set[0..@positive_set.count] if @negative_set.count > @positive_set.count    
+    @positive_set = load_set "positive_re_set"   
+    p [@positive_set.count, @negative_set.count]
+    #@negative_set = @negative_set.shuffle[0...@positive_set.count]
+    #0.33 - 1/2 - all positive set 
+    #
     @nb = NaiveBayes::NaiveBayes.new 
   end
 
 
-  def self.run
-    rbt = ReBayesTest.new
+  def self.run(name = "")
+    rbt = ReBayesTest.new( name )
     rbt.train
+    rbt.get_rn_set
     
-    #rbt.filter_training_set    
-    #rbt.train
+    rbt.filter_training_set    
+    rbt.train
     
     rbt.test
   end
+
+
+  def get_rn_set
+    negative_set = Set.new
+    @negative_set.each_with_index do |example,i| 
+      fv = make_feature_vector(example) 
+      classified = @nb.classify fv    
+      #puts "#{i}/#{@negative_set.count}, #{classified[:class]}"
+      negative_set << example if (classified[:class] == -1)
+    end
+    p [negative_set.count, @negative_set.count, @positive_set.count, negative_set.to_a.sample]
+    #gets 
+    @negative_set = negative_set.to_a
+  end
+
+
+  def extract_features_for_dipre example, train=false   
+    ending_keys = [ :tc_right_context, :tc_left_context, :ne_right_context, :ne_left_context]
+    # other_keys = []
+    other_keys = [ :tc_is_first_token, :has_other_cities, :in_one_sent, 
+                   :tc_word_position, :tc_same_as_feed, :ne_is_first_token ] 
+    if  (example[:ne_right_context] || example[:ne_left_context]) #&& example[:in_one_sent] 
+      #!example[:ne_is_first_token]
+      example.keys.each do |key|
+        if ending_keys.include?(key) && example[key]
+          if example[key].length > 3
+            example[key] = example[key][-3..-1]
+          else
+            example[key] = example[key][-1]
+          end        
+        elsif not(other_keys.include?(key))
+          example[key] = nil 
+        end 
+      end
+    end
+  end
+
+
+  def custom_dipre_patterns
+    dipre_hash = {}
+    positive_filename = "positive_re_set"
+
+    @positive_set = load_set positive_filename
+    @positive_set.uniq!
+    @positive_set.each do |example|
+      extract_features_for_dipre(example, true)      
+      dipre_hash[example] = dipre_hash[example].to_i + 1
+    end
+        
+    patterns = Hash[dipre_hash.find_all{|k,v| v > 1}]
+    p patterns.count
+    return patterns        
+  end
+
+
+  # Удаляем если и там и там tc, ne =~= tc. Удаляем токены длины меньше 3
+  def test_dipre
+    patterns = custom_dipre_patterns
+    pos = Set.new
+    @test_negative_set.each do |example|
+      cloned = example.clone
+      extract_features_for_dipre example
+      if patterns[example]
+        p "BAD!" 
+        p cloned
+      end
+    end
+
+     @test_positive_set.each do |example|
+      cloned = example.clone
+      extract_features_for_dipre example
+      if patterns[example]
+        p "GOOD!" 
+        p cloned
+      end
+    end
+    
+    gets
+
+    cnt = 0
+    @negative_set.each do |example|
+      cloned = example.clone
+      extract_features_for_dipre example
+      if patterns[example]
+        p "???!" 
+        p cloned
+        #gets 
+        cnt += 1
+      end
+    end
+    p cnt
+
+    nil
+
+  end
+
+  # {:text_class_id=>4, :tc_is_first_token=>nil, :tc_token=>"Уфе", :tc_right_context=>nil, :tc_left_context=>"в ", 
+  #   :tc_quoted=>nil, :has_other_cities=>false, :in_one_sent=>false, :distance=>0, :tc_word_position=>false, :tc_same_as_feed=>true, 
+  #   :ne_is_first_token=>nil, :ne_token=>"Башинформ", :ne_right_context=>nil, :ne_left_context=>"агентству ", :ne_quoted=>true, :ne_lemma=>"Башинформ"}
 
 
 
@@ -124,6 +234,82 @@ class ReBayesTest
 
 
   def make_train_and_test_sets
+    preload_not_negative_and_not_positive_arrs
+
+    positive_filename = "positive_re_set"
+    negative_filename = "negative_re_set"
+    test_positive_filename = "positive_test_set"
+    test_negative_filename = "negative_test_set"
+    @positive_set = load_set positive_filename    
+    @negative_set = load_set negative_filename   
+    
+    filter_sets
+
+    @test_positive_set = load_set( test_positive_filename )    - @not_positive_arr + @not_negative_arr
+    @test_negative_set = load_set( test_negative_filename )    - @not_negative_arr + @not_positive_arr
+    #@test_positive_set = @test_positive_set[0...@test_negative_set.count]
+
+
+    # @positive_set = @positive_set - @test_positive_set    
+    # @negative_set = (@negative_set - @test_negative_set).shuffle[0...@positive_set.count]
+    # @positive_set = @positive_set[0...@negative_set.count]
+    
+    #save_set "shuffled_negative_set#{@name}", @negative_set
+
+  end
+
+
+  def filter_sets
+    pos_cnt = (@positive_set.count*(1/3.0)).ceil
+    spies = @positive_set[0...pos_cnt].clone
+    @negative_set += spies 
+    @positive_set[0...pos_cnt] = @positive_set[pos_cnt...@positive_set.count]
+    
+
+    # dict_lemmas = FeatureFetcher::RelationExtractor.new.get_dict_lemmas    
+    
+
+    # filtered_negative_train = Set.new
+    # other_dicts_hash = {}
+    # @negative_set.each_with_index do |example,i|
+    #   puts "#{i}/#{@negative_set.count}"
+    #   current_dict = dict_lemmas[example[:text_class_id]]
+
+    #   if other_dicts_hash[example[:text_class_id]]
+    #     other_dicts = other_dicts_hash[example[:text_class_id]]
+    #   else
+    #     cloned_dict_lemma = dict_lemmas.clone
+    #     cloned_dict_lemma.delete(example[:text_class_id])
+    #     other_dicts_hash[example[:text_class_id]] ||= cloned_dict_lemma.values.flatten.to_set.flatten                      
+    #     other_dicts = other_dicts_hash[example[:text_class_id]]
+    #   end
+      
+    #   if !current_dict.include?( example[:ne_lemma] ) && other_dicts.include?( example[:ne_lemma] )         
+    #     filtered_negative_train << example if example[:ne_token].split(" ").count == 1
+    #   end
+    # end
+    #p [@negative_set.count, filtered_negative_train.count, @positive_set.count, @positive_set.sample, @negative_set.sample, filtered_negative_train.to_a.sample]
+    #@negative_set = filtered_negative_train.to_a    
+  end
+
+
+  def load_set filename
+    loaded_hash = Marshal.load(File.binread(filename))     
+    return loaded_hash.values.to_a.flatten if loaded_hash.is_a?( Hash )
+    return loaded_hash.flatten
+  end
+
+
+  def save_set filename, set
+    File.open(filename,'wb') do |f|
+      f.write Marshal.dump(set)
+    end
+  end
+
+
+
+
+  def preload_not_negative_and_not_positive_arrs
     @not_positive_arr = [
                               {:text_class_id=>4, :tc_is_first_token=>nil, :tc_token=>"Уфе VI Зимних", :tc_right_context=>"международных", :tc_left_context=>"в ", :tc_quoted=>nil, :has_other_cities=>false, :in_one_sent=>false, :distance=>1, :tc_word_position=>false, :tc_same_as_feed=>true, :ne_is_first_token=>nil, :ne_token=>"Уфе", :ne_right_context=>"но", :ne_left_context=>"в ", :ne_quoted=>nil, :ne_lemma=>"УФА"},
                               {:text_class_id=>4, :tc_is_first_token=>nil, :tc_token=>"Уфе", :tc_right_context=>nil, :tc_left_context=>"в ", :tc_quoted=>nil, :has_other_cities=>false, :in_one_sent=>true, :distance=>3, :tc_word_position=>true, :tc_same_as_feed=>true, :ne_is_first_token=>true, :ne_token=>"Всего", :ne_right_context=>"за", :ne_left_context=>nil, :ne_quoted=>nil, :ne_lemma=>"ВЕСЬ"},
@@ -139,8 +325,7 @@ class ReBayesTest
                               {:text_class_id=>4, :tc_is_first_token=>nil, :tc_token=>"Уфе", :tc_right_context=>nil, :tc_left_context=>"в ", :tc_quoted=>nil, :has_other_cities=>false, :in_one_sent=>true, :distance=>4, :tc_word_position=>true, :tc_same_as_feed=>true, :ne_is_first_token=>true, :ne_token=>"Новый", :ne_right_context=>"состав", :ne_left_context=>nil, :ne_quoted=>nil, :ne_lemma=>"НОВЫЙ"},
                               {:text_class_id=>3, :tc_is_first_token=>nil, :tc_token=>" Стерлитамакском", :tc_right_context=>"районе", :tc_left_context=>nil, :tc_quoted=>nil, :has_other_cities=>false, :in_one_sent=>false, :distance=>0, :tc_word_position=>false, :tc_same_as_feed=>true, :ne_is_first_token=>true, :ne_token=>"Украинский", :ne_right_context=>"историко", :ne_left_context=>nil, :ne_quoted=>nil, :ne_lemma=>"УКРАИНСКИЙ"},
                               {:text_class_id=>4, :tc_is_first_token=>nil, :tc_token=>"Уфе", :tc_right_context=>nil, :tc_left_context=>"в ", :tc_quoted=>nil, :has_other_cities=>false, :in_one_sent=>true, :distance=>3, :tc_word_position=>true, :tc_same_as_feed=>true, :ne_is_first_token=>true, :ne_token=>"Меньше", :ne_right_context=>"месяца", :ne_left_context=>nil, :ne_quoted=>nil, :ne_lemma=>"МАЛЕНЬКИЙ"},
-                              {:text_class_id=>4, :tc_is_first_token=>nil, :tc_token=>"Уфимочки", :tc_right_context=>"сгорели", :tc_left_context=>"Надежды ", :tc_quoted=>true, :has_other_cities=>false, :in_one_sent=>true, :distance=>2, :tc_word_position=>false, :tc_same_as_feed=>true, :ne_is_first_token=>true, :ne_token=>"Надежды", :ne_right_context=>nil, :ne_left_context=>nil, :ne_quoted=>nil, :ne_lemma=>"НАДЕЖДА"},
-                              {:text_class_id=>5, :tc_is_first_token=>nil, :tc_token=>" Нефтекамске", :tc_right_context=>"за", :tc_left_context=>nil, :tc_quoted=>nil, :has_other_cities=>false, :in_one_sent=>true, :distance=>3, :tc_word_position=>false, :tc_same_as_feed=>true, :ne_is_first_token=>nil, :ne_token=>"Нефтяников", :ne_right_context=>nil, :ne_left_context=>"улице ", :ne_quoted=>nil, :ne_lemma=>"НЕФТЯНИК"},
+                              {:text_class_id=>4, :tc_is_first_token=>nil, :tc_token=>"Уфимочки", :tc_right_context=>"сгорели", :tc_left_context=>"Надежды ", :tc_quoted=>true, :has_other_cities=>false, :in_one_sent=>true, :distance=>2, :tc_word_position=>false, :tc_same_as_feed=>true, :ne_is_first_token=>true, :ne_token=>"Надежды", :ne_right_context=>nil, :ne_left_context=>nil, :ne_quoted=>nil, :ne_lemma=>"НАДЕЖДА"},                              
                               {:text_class_id=>2, :tc_is_first_token=>nil, :tc_token=>"Салавате", :tc_right_context=>nil, :tc_left_context=>"в ", :tc_quoted=>nil, :has_other_cities=>false, :in_one_sent=>false, :distance=>1, :tc_word_position=>false, :tc_same_as_feed=>true, :ne_is_first_token=>nil, :ne_token=>"Салавате", :ne_right_context=>"и", :ne_left_context=>"в ", :ne_quoted=>nil, :ne_lemma=>"САЛАВАТ"},
                               {:text_class_id=>4, :tc_is_first_token=>nil, :tc_token=>" Уфе", :tc_right_context=>"полицейские", :tc_left_context=>nil, :tc_quoted=>nil, :has_other_cities=>false, :in_one_sent=>false, :distance=>2, :tc_word_position=>false, :tc_same_as_feed=>true, :ne_is_first_token=>nil, :ne_token=>"Центра", :ne_right_context=>"кадровых", :ne_left_context=>"вывеской ", :ne_quoted=>nil, :ne_lemma=>"ЦЕНТР"},
                               {:text_class_id=>3, :tc_is_first_token=>true, :tc_token=>"Стерлитамак", :tc_right_context=>nil, :tc_left_context=>nil, :tc_quoted=>nil, :has_other_cities=>false, :in_one_sent=>false, :distance=>2, :tc_word_position=>false, :tc_same_as_feed=>true, :ne_is_first_token=>nil, :ne_token=>"Салават", :ne_right_context=>nil, :ne_left_context=>"городах ", :ne_quoted=>nil, :ne_lemma=>"САЛАВАТ"},
@@ -185,34 +370,6 @@ class ReBayesTest
                                 {:text_class_id=>1, :tc_is_first_token=>true, :tc_token=>"Ишимбай", :tc_right_context=>"37", :tc_left_context=>nil, :tc_quoted=>nil, :has_other_cities=>false, :in_one_sent=>true, :distance=>2, :tc_word_position=>false, :tc_same_as_feed=>true, :ne_is_first_token=>nil, :ne_token=>"Юрий Малкин", :ne_right_context=>"осуждён", :ne_left_context=>"летний ", :ne_quoted=>nil, :ne_lemma=>"ЮРИЙ МАЛКИН"},
                                 {:text_class_id=>4, :tc_is_first_token=>true, :tc_token=>"Уфимская", :tc_right_context=>"художница", :tc_left_context=>nil, :tc_quoted=>nil, :has_other_cities=>false, :in_one_sent=>false, :distance=>0, :tc_word_position=>false, :tc_same_as_feed=>true, :ne_is_first_token=>nil, :ne_token=>"Олеся Сапожкова", :ne_right_context=>nil, :ne_left_context=>"художница ", :ne_quoted=>nil, :ne_lemma=>"ОЛЕСЬ САПОЖКОВА"}
                                 ]
-
-    positive_filename = "positive_re_set"
-    negative_filename = "negative_re_set"
-    test_positive_filename = "positive_test_set"
-    test_negative_filename = "negative_test_set"
-    @positive_set = load_set positive_filename
-    @negative_set = load_set negative_filename   
-    @test_positive_set = load_set( test_positive_filename )    - @not_positive_arr  
-    @test_negative_set = load_set( test_negative_filename )    - @not_negative_arr
-    @test_positive_set = @test_positive_set[0...@test_negative_set.count]
-
-
-    @positive_set = @positive_set - @test_positive_set    
-    @negative_set = (@negative_set - @test_negative_set)[0...@positive_set.count]
-  end
-
-
-  def load_set filename
-    loaded_hash = Marshal.load(File.binread(filename))     
-    return loaded_hash.values.to_a.flatten if loaded_hash.is_a?( Hash )
-    return loaded_hash.flatten
-  end
-
-
-  def save_set filename, set
-    File.open(filename,'wb') do |f|
-      f.write Marshal.dump(set)
-    end
   end
 end
 
