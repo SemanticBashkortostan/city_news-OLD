@@ -70,7 +70,7 @@ class Feed < ActiveRecord::Base
   def downcased_city_features
     features = []
     TextClass.pluck(:name).each do |tc_name|
-      features << string_for_classifier.scan( Regexp.new(Settings.bayes.regexp[tc_name]) )
+      features << (title.to_s + ". " + summary.to_s).scan( Regexp.new(Settings.bayes.regexp.downcased[tc_name]) )
     end
     features.flatten.map{ |e| WordProcessor.lemmatize(e) }
   end
