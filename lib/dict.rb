@@ -22,10 +22,10 @@ class Dict
   def stem_dict( features )
     stem_dict = {}
     features.each do |feature_arr|
-      feature, quoted = filter feature_arr[0]      
+      feature, quoted = filter feature_arr[0]          
       if feature.is_a? Array 
         feature.each{ |f| stem_dict[feature] = {:stem => WordProcessor.stem(feature, quoted) } }
-      else
+      else        
         stem_dict[feature] = { :stem => WordProcessor.stem(feature, quoted) }
       end      
     end
@@ -39,7 +39,7 @@ class Dict
       feature, quoted = filter feature_arr[0]
       if feature.is_a? Array
         feature.each { |f| lemma_dict[feature] = {:lemma => WordProcessor.lemmatize( feature, quoted )} }
-      else 
+      else         
         lemma_dict[feature] = {:lemma => WordProcessor.lemmatize( feature, quoted )}
       end
     end
@@ -48,7 +48,7 @@ class Dict
 
 
   def dict_as_set raw_dict, key
-    raw_dict.collect{|k,v| v[key]}.compact.to_set
+    raw_dict.collect{|k,v| v[key]}.find_all{|word| word.length > 2}.compact.to_set
   end
 
 
