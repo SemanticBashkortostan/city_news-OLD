@@ -5,7 +5,7 @@ module FeatureFetcher
   class RelationExtractor
 
 
-    def initialize
+    def initialize( dict_type )
       @osm_arr = {                   
                   TextClass.find_by_name("Стерлитамак").id => ["sterlitamak.osm", FeatureFetcher::Osm::STERLITAMAK_BOUNDING_BOX], 
                   TextClass.find_by_name("Салават").id => ["salavat.osm", FeatureFetcher::Osm::SALAVAT_BOUNDING_BOX],
@@ -14,50 +14,42 @@ module FeatureFetcher
                   TextClass.find_by_name("Уфа").id => ["ufa.osm", FeatureFetcher::Osm::UFA_BOUNDING_BOX]
                 }
       @text_class_ids = @osm_arr.keys
+
+      @dict_type = dict_type
+      @dict_filename = "#{@dict_type}_vocabulary_hash"      
     end
 
 
-    def get_dictionaries
-      filename = 'lemma_vocabolary_hash'
-      return Marshal.load (File.binread(filename)) if File.exist?( filename ) 
-
-      vocabolary = {}
-      @osm_arr.each do |klass_id, params|
-        print "#{klass_id} processing..."
-        osm_feature_fetcher = FeatureFetcher::Osm.new params[1], params[0]
-        dict = Dict.new.lemma_dict osm_feature_fetcher.get_features
-        vocabolary[klass_id] = dict
+    def get_dictionaries      
+      if File.exist?( @dict_filename ) 
+        return load_hash(@dict_filename) 
+      else
+        case @dict_type
+        when :lemma then get_lemma_dicts
+        when :stem  then get_stem_dicts
+        else raise Exception
+        end
       end
 
-      File.open(filename,'wb') do |f|
-        f.write Marshal.dump(vocabolary)
-      end
-
-      return vocabolary
     end
 
 
     def get_stem_dicts
-      filename = 'stem_vocabolary_hash'
-      return Marshal.load (File.binread(filename)) if File.exist?( filename ) 
-
-      vocabolary = {}
+      vocabulary = {}
       @osm_arr.each do |klass_id, params|
         print "#{klass_id} processing..."
         osm_feature_fetcher = FeatureFetcher::Osm.new params[1], params[0]
         dict = Dict.new.stem_dict osm_feature_fetcher.get_features
-        vocabolary[klass_id] = dict
+        vocabulary[klass_id] = dict
       end
 
-      File.open(filename,'wb') do |f|
-        f.write Marshal.dump(vocabolary)
-      end
-
-      return vocabolary
+      save_hash( @dict_filename, vocabulary )
+    
+      return vocabulary
     end
 
 
-    def get_dict_lemmas( text_classes=nil )
+    def get_lemma_dicts
       text_classes ||= TextClass.where :id => @text_class_ids
 
       dictionaries = get_dictionaries
@@ -119,6 +111,20 @@ module FeatureFetcher
     end
 
 
+    def load_hash filename
+      Marshal.load( File.binread(filename) ) 
+    end
+
+
+    def save_hash filename, vocabulary
+      File.open(filename,'wb') do |f|
+        f.write Marshal.dump(vocabulary)
+      end
+    end
+
+
   end
+
+
 end
 

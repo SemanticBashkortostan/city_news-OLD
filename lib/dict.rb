@@ -10,7 +10,7 @@ class Dict
     stem_dict = {}
     stemmer= Lingua::Stemmer.new(:language => "ru")
     features.each do |feature_arr|
-      feature = filter_string feature_arr[0]
+      feature = filter_for_weighted_stem feature_arr[0]
       stem_dict[feature] ||= {}
       stem_dict[feature][:weight] = stem_dict[feature][:weight].to_i + 1  
     end
@@ -21,7 +21,7 @@ class Dict
   def stem_dict( features )
     stem_dict = {}
     features.each do |feature_arr|
-      feature, quoted = filter_for_lemma feature_arr[0]      
+      feature, quoted = filter feature_arr[0]      
       if feature.is_a? Array 
         feature.each{ |f| stem_dict[feature] = {:stem => WordProcessor.stem(feature, quoted) } }
       else
@@ -35,7 +35,7 @@ class Dict
   def lemma_dict( features )
     lemma_dict = {}
     features.each do |feature_arr|
-      feature, quoted = filter_for_lemma feature_arr[0]
+      feature, quoted = filter feature_arr[0]
       if feature.is_a? Array
         feature.each { |f| lemma_dict[feature] = {:lemma => WordProcessor.lemmatize( feature, quoted )} }
       else 
@@ -46,7 +46,7 @@ class Dict
   end
 
 
-  def filter_for_lemma string
+  def filter string
     big_words_regexp = /\b[А-ЯA-Z][[:word:]]*/
     quot_regexp = /&quot;(.*)&quot;/    
     token = ""
@@ -62,7 +62,7 @@ class Dict
   end
 
 
-  def filter_string( string )  
+  def filter_for_weighted_stem( string )  
     words_regexp = /[[:word:]]+/ 
     stemmer= Lingua::Stemmer.new(:language => "ru")  
     string.scan( words_regexp ).map{|word| stemmer.stem( word )}.join(" ").mb_chars.downcase.to_s
