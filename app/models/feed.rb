@@ -57,8 +57,11 @@ class Feed < ActiveRecord::Base
 
   def features_for_text_classifier
     raw_feature_vectors = get_raw_feature_vectors   
-    raw_feature_vectors.collect!{|e| WordProcessor.lemmatize(e[:token], e[:quoted]) }
-    raw_feature_vectors += downcased_city_features
+    fvs = city_and_named_features(raw_feature_vectors).flatten
+    return nil if fvs.empty?
+    fvs = fvs.collect{|e| WordProcessor.stem(e[:token], e[:quoted]) }
+    fvs += downcased_city_features
+    fvs.find_all{|e| e.length > 2}    
   end
 
 
@@ -72,7 +75,7 @@ class Feed < ActiveRecord::Base
     TextClass.pluck(:name).each do |tc_name|
       features << (title.to_s + ". " + summary.to_s).scan( Regexp.new(Settings.bayes.regexp.downcased[tc_name]) )
     end
-    features.flatten.map{ |e| WordProcessor.lemmatize(e) }
+    features.flatten.map{ |e| WordProcessor.stem(e, false) }
   end
 
 
@@ -112,13 +115,14 @@ class Feed < ActiveRecord::Base
         feature_hash = {           
                           :text_class_id => city_hash[:text_class_id], :tc_is_first_token => city_hash[:is_first_token], :tc_token => city_hash[:token],
                           :tc_right_context => city_hash[:right_context], :tc_left_context => city_hash[:left_context], :tc_quoted => city_hash[:quoted],
+                          :tc_stem => WordProcessor.stem(city_hash[:token], city_hash[:quoted]),
 
                           :has_other_cities => has_other_cities, :in_one_sent => in_one_sent, :distance => distance, :tc_word_position => tc_word_position,
                           :tc_same_as_feed => tc_same_as_feed,
 
                           :ne_is_first_token => named_hash[:is_first_token], :ne_token => named_hash[:token], :ne_right_context => named_hash[:right_context], 
                           :ne_left_context => named_hash[:left_context], :ne_quoted => named_hash[:quoted], 
-                          :ne_lemma => WordProcessor.lemmatize( named_hash[:token], named_hash[:quoted] ), :ne_stem => WordProcessor.stem( named_hash[:token], named_hash[:quoted] )
+                          :ne_stem => WordProcessor.stem( named_hash[:token], named_hash[:quoted] )
                        }
         classifier_features << feature_hash
       end

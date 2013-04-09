@@ -53,8 +53,8 @@ module FeatureFetcher
             if fv[:tc_token] =~ Regexp.new( Settings.bayes.regexp[tc.name] ) 
               city_dictionary = dict[tc.id]          
               #КОСТЫЛЬ: Change :ne_lemma to required field    
-              if city_dictionary.include?( fv[:ne_lemma] )
-                p "Good! #{fv} #{fv[:ne_lemma]}"
+              if city_dictionary.include?( fv[:ne_stem] )
+                p "Good! #{fv} #{fv[:ne_stem]}"
                 grouped_by_city_training_set[tc.id] ||= []
                 grouped_by_city_training_set[tc.id] << fv
                 break
@@ -71,9 +71,31 @@ module FeatureFetcher
       positive_filename = "positive_re_set"      
       negative_filename = "negative_re_set"
       save_hash(positive_filename, grouped_by_city_training_set)
-      save_hash(negative_filename, negative_training_set)
-          
-      p [grouped_by_city_training_set.values.count, negative_training_set.count]          
+      save_hash(negative_filename, negative_training_set)        
+    end
+
+
+    def make_big_vocabulary
+      big_vocabulary = Set.new
+
+      filename = "positive_re_set"
+      positive_re_hash = load_hash filename      
+      positive_re_hash.each do |k, v|
+        p v.count  
+        v.each do |vector|
+          big_vocabulary << vector[:ne_stem]
+          big_vocabulary << WordProcessor.stem(vector[:tc_token], vector[:tc_quoted])
+        end
+      end
+      
+      big_vocabulary += get_dict.values.to_set.flatten
+      p big_vocabulary.count
+      save_hash( "big_vocabulary", big_vocabulary )
+    end
+
+
+    def big_vocabulary
+      load_hash("big_vocabulary")      
     end
 
 
@@ -84,6 +106,7 @@ module FeatureFetcher
         osm_feature_fetcher = FeatureFetcher::Osm.new params[1], params[0]
         dict = Dict.new.stem_dict osm_feature_fetcher.get_features
         vocabulary[klass_id] = dict
+        p dict.count
       end
       save_hash( @dict_filename, vocabulary )
       return vocabulary
