@@ -20,7 +20,8 @@ module FeatureFetcher
     end
 
 
-    def get_dictionaries      
+    # Return dict like { :text_class_id => Set(word1, word2) }
+    def get_dict    
       if File.exist?( @dict_filename ) 
         return load_hash(@dict_filename) 
       else
@@ -34,42 +35,15 @@ module FeatureFetcher
     end
 
 
-    def get_stem_dicts
-      vocabulary = {}
-      @osm_arr.each do |klass_id, params|
-        print "#{klass_id} processing..."
-        osm_feature_fetcher = FeatureFetcher::Osm.new params[1], params[0]
-        dict = Dict.new.stem_dict osm_feature_fetcher.get_features
-        vocabulary[klass_id] = dict
-      end
-
-      save_hash( @dict_filename, vocabulary )
-    
-      return vocabulary
-    end
-
-
-    def get_lemma_dicts
-      text_classes ||= TextClass.where :id => @text_class_ids
-
-      dictionaries = get_dictionaries
-      dict_lemmas = {}  
-      text_classes.each do |tc|
-        dict_lemmas[tc.id] = dictionaries[tc.id].collect{|k,v| v[:lemma]}.compact.to_set
-      end   
-      return dict_lemmas 
-    end
-
-
+    # #КОСТЫЛЬ detected
     def form_training_set
       # includes :text_classes and maybe regexp into raw_feature_vector in Feed
       grouped_by_city_training_set = {}
       negative_training_set = []
-      text_classes = TextClass.where :id => @text_class_ids
-        
-      dict_lemmas = get_dict_lemmas(text_classes)
-  
+      text_classes = TextClass.where :id => @text_class_ids      
+      dict = get_dict
       feeds = Feed.includes(:text_class).where(:text_class_id => @text_class_ids).all
+
       feeds.each_with_index do |feed, ind|
         p "proccesed #{feed.id} :: #{ind}/#{feeds.count}"
         feed_feature_vectors = feed.feature_vectors_for_relation_extraction
@@ -77,8 +51,9 @@ module FeatureFetcher
         feed_feature_vectors.each { |fv|
           text_classes.each do |tc|            
             if fv[:tc_token] =~ Regexp.new( Settings.bayes.regexp[tc.name] ) 
-              city_dictionary_lemmas = dict_lemmas[tc.id]              
-              if city_dictionary_lemmas.include?( fv[:ne_lemma] )
+              city_dictionary = dict[tc.id]          
+              #КОСТЫЛЬ: Change :ne_lemma to required field    
+              if city_dictionary.include?( fv[:ne_lemma] )
                 p "Good! #{fv} #{fv[:ne_lemma]}"
                 grouped_by_city_training_set[tc.id] ||= []
                 grouped_by_city_training_set[tc.id] << fv
@@ -93,21 +68,38 @@ module FeatureFetcher
         }             
       end
 
-      positive_filename = "positive_re_set"
+      positive_filename = "positive_re_set"      
       negative_filename = "negative_re_set"
+      save_hash(positive_filename, grouped_by_city_training_set)
+      save_hash(negative_filename, negative_training_set)
+          
+      p [grouped_by_city_training_set.values.count, negative_training_set.count]          
+    end
 
-      File.open(positive_filename,'wb') do |f|
-        f.write Marshal.dump(grouped_by_city_training_set)
+
+    def get_stem_dicts
+      vocabulary = {}
+      @osm_arr.each do |klass_id, params|
+        print "#{klass_id} processing..."
+        osm_feature_fetcher = FeatureFetcher::Osm.new params[1], params[0]
+        dict = Dict.new.stem_dict osm_feature_fetcher.get_features
+        vocabulary[klass_id] = dict
       end
+      save_hash( @dict_filename, vocabulary )
+      return vocabulary
+    end
 
-      File.open(negative_filename,'wb') do |f|
-        f.write Marshal.dump(negative_training_set)
+
+    def get_lemma_dicts
+      vocabulary = {}
+      @osm_arr.each do |klass_id, params|
+        print "#{klass_id} processing..."
+        osm_feature_fetcher = FeatureFetcher::Osm.new params[1], params[0]
+        dict = Dict.new.lemma_dict osm_feature_fetcher.get_features
+        vocabulary[klass_id] = dict
       end
-
-      p [grouped_by_city_training_set, grouped_by_city_training_set.values.count]
-      p "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-      p [negative_training_set, negative_training_set.count]
-            
+      save_hash( @dict_filename, vocabulary )
+      return vocabulary
     end
 
 

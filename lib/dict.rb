@@ -18,6 +18,7 @@ class Dict
   end
 
 
+  # Return Set{ word1, word2 ... }
   def stem_dict( features )
     stem_dict = {}
     features.each do |feature_arr|
@@ -28,7 +29,7 @@ class Dict
         stem_dict[feature] = { :stem => WordProcessor.stem(feature, quoted) }
       end      
     end
-    return stem_dict
+    return dict_as_set(stem_dict, :stem)
   end
 
 
@@ -42,7 +43,12 @@ class Dict
         lemma_dict[feature] = {:lemma => WordProcessor.lemmatize( feature, quoted )}
       end
     end
-    return lemma_dict
+    return dict_as_set(lemma_dict, :lemma)
+  end
+
+
+  def dict_as_set raw_dict, key
+    raw_dict.collect{|k,v| v[key]}.compact.to_set
   end
 
 
