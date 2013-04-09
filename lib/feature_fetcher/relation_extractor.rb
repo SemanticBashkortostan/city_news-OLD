@@ -57,20 +57,26 @@ module FeatureFetcher
     end
 
 
+    def get_dict_lemmas( text_classes=nil )
+      text_classes ||= TextClass.where :id => @text_class_ids
+
+      dictionaries = get_dictionaries
+      dict_lemmas = {}  
+      text_classes.each do |tc|
+        dict_lemmas[tc.id] = dictionaries[tc.id].collect{|k,v| v[:lemma]}.compact.to_set
+      end   
+      return dict_lemmas 
+    end
+
+
     def form_training_set
       # includes :text_classes and maybe regexp into raw_feature_vector in Feed
       grouped_by_city_training_set = {}
       negative_training_set = []
       text_classes = TextClass.where :id => @text_class_ids
-
-      dictionaries = get_dictionaries
-      #dictionaries = get_stem_dicts
-
-      dict_lemmas = {}      
-      text_classes.each do |tc|
-        dict_lemmas[tc.id] = dictionaries[tc.id].collect{|k,v| v[:lemma]}.compact.to_set
-      end      
-
+        
+      dict_lemmas = get_dict_lemmas(text_classes)
+  
       feeds = Feed.includes(:text_class).where(:text_class_id => @text_class_ids).all
       feeds.each_with_index do |feed, ind|
         p "proccesed #{feed.id} :: #{ind}/#{feeds.count}"

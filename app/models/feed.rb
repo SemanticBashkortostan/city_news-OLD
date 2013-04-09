@@ -55,6 +55,26 @@ class Feed < ActiveRecord::Base
   end
 
 
+  def features_for_text_classifier
+    raw_feature_vectors = get_raw_feature_vectors   
+    raw_feature_vectors.collect!{|e| WordProcessor.lemmatize(e[:token], e[:quoted]) }
+    raw_feature_vectors += downcased_city_features
+  end
+
+
+
+  protected
+
+
+
+  def downcased_city_features
+    features = []
+    TextClass.pluck(:name).each do |tc_name|
+      features << string_for_classifier.scan( Regexp.new(Settings.bayes.regexp[tc_name]) )
+    end
+    features.flatten.map{ |e| WordProcessor.lemmatize(e) }
+  end
+
 
   def city_and_named_features(raw_feature_vectors)
     city_features = []
