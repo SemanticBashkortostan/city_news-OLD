@@ -59,9 +59,14 @@ class Feed < ActiveRecord::Base
     raw_feature_vectors = get_raw_feature_vectors   
     fvs = city_and_named_features(raw_feature_vectors).flatten
     return nil if fvs.empty?
-    fvs = fvs.collect{|e| WordProcessor.stem(e[:token], e[:quoted]) }
-    fvs += downcased_city_features
-    fvs.find_all{|e| e.length > 2}    
+    fvs = fvs.collect{|e| WordProcessor.stem(e[:token], e[:quoted]) }          
+    feature_vector = fvs.find_all{|e| e.length > 2}    
+    feature_vector << downcased_city_features.find_all{|e| e.length > 2}
+  end
+
+
+  def domain
+    url.split("/")[2]
   end
 
 
