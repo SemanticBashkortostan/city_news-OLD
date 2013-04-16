@@ -10,7 +10,7 @@ class Classifier < ActiveRecord::Base
   has_many :classifier_text_class_feature_properties, :dependent => :destroy
   has_many :text_class_features, :through => :classifier_text_class_feature_properties
 
-  has_many :docs_counts, :dependent => :destroy
+  #has_many :docs_counts, :dependent => :destroy
   has_many :text_classes, :through => :docs_counts
 
   has_and_belongs_to_many :train_feeds, :class_name => "Feed"
@@ -45,6 +45,17 @@ class Classifier < ActiveRecord::Base
     if is_naive_bayes?
       naive_bayes_train( features_vector, klass_id )
     end
+  end
+
+
+  def docs_counts(text_class_id)
+    parameters["docs_counts_#{text_class_id}"]
+  end
+
+  # В hstore все сохраняется как строка!!!
+  def docs_counts=(couple)
+    parameters["docs_counts_#{couple[:text_class_id]}"] ||= {}
+    parameters["docs_counts_#{couple[:text_class_id]}"] = couple[:val]
   end
 
 
