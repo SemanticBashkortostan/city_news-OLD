@@ -5,6 +5,8 @@ gem 'rails', '3.2.12'
 gem 'pg'
 gem 'activeadmin'
 
+gem 'activerecord-postgres-hstore'
+
 gem 'jquery-rails'
 
 gem "haml", ">= 3.1.7"
