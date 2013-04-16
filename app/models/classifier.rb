@@ -1,8 +1,12 @@
 class Classifier < ActiveRecord::Base
+  include ClassifierNaiveBayes
+  include ClassifierPerformance
+
   NAIVE_BAYES_NAME = "NaiveBayes"
-  SVM_NAME = "SVM"
+  ROSE_NAIVE_BAYES_NAME = "ROSE-MNB"
+
   TRAIN_TAGS = ["test_train", "dev_train", "was_trainer", "to_train"]
-  TEST_TAGS  = ["dev_test"]
+
   UNCORRECT_DATA_TAGS = ["uncorrect_data", "uncorrect_classified", "several_class"]
 
   attr_accessible :name
@@ -10,15 +14,12 @@ class Classifier < ActiveRecord::Base
   has_many :classifier_text_class_feature_properties, :dependent => :destroy
   has_many :text_class_features, :through => :classifier_text_class_feature_properties
 
-  #has_many :docs_counts, :dependent => :destroy
-  has_many :text_classes, :through => :docs_counts
-
   has_and_belongs_to_many :train_feeds, :class_name => "Feed"
 
   serialize :parameters, ActiveRecord::Coders::Hstore
 
 
-  def train str, klass
+  def train feed, klass
     case klass
       when String
         klass_id = TextClass.find_by_name(klass).id
@@ -30,37 +31,70 @@ class Classifier < ActiveRecord::Base
         raise ArgumentError
     end
 
-    features_vector = get_features_vector( str )
+    features_vector = get_features_vector( feed )
     if features_vector.empty?
       p ["EXCEPTION", str, klass]
       raise Exception
     end
 
-    #NOTE: Refactor this part if will be a lot of data
-    docs_count = docs_counts.find_or_create_by_text_class_id(klass_id)
-    docs_count.docs_count += 1
-    docs_count.save!
-    docs_counts.reload
+    self.docs_counts = {:text_class_id => klass_id, :count => docs_counts(klass_id) + 1}
+    add_to_text_classes klass_id
 
-    if is_naive_bayes?
-      naive_bayes_train( features_vector, klass_id )
+    case
+      when is_naive_bayes?
+        naive_bayes_train( features_vector, klass_id )
+      when is_rose_naive_bayes?
+        rose_naive_bayes_train( features_vector, klass_id )
     end
   end
 
 
+  #---------- HSTORE - actions --------------------------------------------------
   def docs_counts(text_class_id)
-    parameters["docs_counts_#{text_class_id}"]
+    parameters["docs_counts_#{text_class_id}"].to_i
   end
 
-  # В hstore все сохраняется как строка!!!
+  # +couple+ - hash like {:text_class_id => xx, :count => xx}
   def docs_counts=(couple)
-    parameters["docs_counts_#{couple[:text_class_id]}"] ||= {}
-    parameters["docs_counts_#{couple[:text_class_id]}"] = couple[:val]
+    parameters["docs_counts_#{couple[:text_class_id]}"] = couple[:count]
   end
 
 
-  def classify str
-    features_vector = get_features_vector( str )
+  def text_classes
+    return [] if parameters["text_classes"].blank?
+    TextClass.where :id => JSON.parse(parameters["text_classes"].to_s)  
+  end
+
+
+  def text_classes=(arr)
+    if arr[0].is_a? TextClass
+      parameters["text_classes"] = arr.collect{|e| e.id} 
+    else
+      parameters["text_classes"] = arr
+    end
+  end
+
+
+  def add_to_text_classes(elem)
+    parameters["text_classes"] ||= [] #NOTE: Need move into initialize
+    parameters["text_classes"].is_a?( String ) ? arr = JSON.parse(parameters["text_classes"]).to_set : arr = parameters["text_classes"].to_set      
+    arr << elem
+    parameters["text_classes"] = arr.to_a    
+  end
+
+
+  def delete_from_text_classes(text_class)
+    tcs = text_classes
+    tcs.delete(text_class)
+    self.text_classes = tcs
+    destroy_key(:parameters, "docs_counts_#{text_class.id}")
+  end
+
+  #-----------------end of--HSTORE-actions --------------------------------------------------
+
+
+  def classify feed
+    features_vector = get_features_vector( feed )
     return nil if features_vector.empty?
     if is_naive_bayes?
       naive_bayes_classify( features_vector )
@@ -70,26 +104,9 @@ class Classifier < ActiveRecord::Base
 
   def extract_class!( text_class )
     classifier_text_class_feature_properties.where( :text_class_feature_id => self.text_class_features.where( :text_class_id => text_class ) ).destroy_all
-    text_classes.delete(text_class)
+    delete_from_text_classes(text_class)
     rebuild_classifier
     save_to_database!
-  end
-
-
-  # Test classifier by fetching feeds with specific tags
-  # +options[:tags]+ - list of tags, like ["dev_test", "production"]
-  # +options[:tags_options]+ - parameter which responses how to fetch, like {:match_all => true} or {:any => true}
-  # +options[:feeds_count]+ - default fetch 20% from train_set_count feeds with specific tags
-  # +options[:is_random]+ - if true then fetch feeds randomly
-  def test( options={} )
-    # +:testing_options+ - test(options); +:data+ - array with [true or false, feed.id, feed.tc.name, tc.name, str];
-    # +:uncorrect_data+ - data not accepted by filter [feed.id, feed.tc.name, str];
-    # +:f_measures+ - hash {tc.name => f_measure}; +:accuracy+; +confusion_matrix+ - hash
-    @test_data = {:testing_options => options, :data => [], :uncorrect_data => []}
-    test_feeds = get_testing_feeds( options[:tags], options[:tags_options], options[:feeds_count], options[:is_random] )
-    confusion_matrix = build_confusion_matrix( test_feeds )
-    classifier_performance confusion_matrix
-    pretty_test_data_file( options[:file_prefix] )
   end
 
 
@@ -113,22 +130,6 @@ class Classifier < ActiveRecord::Base
   end
 
 
-  # Return testing feeds which requires to special conditions as such as
-  # +tags+, +tags_options+, +feeds_count+, +is_random+
-  def get_testing_feeds( tags=nil, tags_options=nil, feeds_count = nil, is_random = false )
-    tags ||= TEST_TAGS
-    tags_options ||= {}
-    feeds_count ||= ( train_set_count * 0.2 ).ceil
-    testing_feeds = []
-    text_classes.each do |tc|
-      tmp_tags_options = tags_options.clone
-      scope = Feed.where(:text_class_id => tc).tagged_with( tags, tmp_tags_options )
-      testing_feeds << ( (is_random == true ? scope.order("RANDOM()").limit(feeds_count) : scope.limit(feeds_count)) )
-    end
-    return testing_feeds.flatten
-  end
-
-
   def save_to_database!
     if is_naive_bayes?
       save_naive_bayes
@@ -145,18 +146,20 @@ class Classifier < ActiveRecord::Base
     end
   end
 
-
+  # +options+ description:
+  # options[:name] - name of classifier
   def self.make_from_text_classes( text_klasses, options = {} )
     raise ArgumentError if text_klasses.blank? || options[:name].blank?
 
     classifier = Classifier.create! :name => options[:name]
     classifier.text_classes = text_klasses
+    classifier.save!
     classifier.reload
     classifier.preload_classifier
     training_feeds = classifier.get_training_feeds
     training_feeds.each do |text_klass, feeds|
       feeds.each do |feed|
-        classifier.train( feed.string_for_classifier, text_klass )
+        classifier.train( feed, text_klass )
         classifier.train_feeds << feed
       end
     end
@@ -167,186 +170,83 @@ class Classifier < ActiveRecord::Base
   end
 
 
-  def get_features_vector str
-    return str if Rails.env == "test"
+  #TODO:HACK:FUCK: Now code is not clear and we get some ambiguity and code repeating in Classifier
+  def get_features_vector feed
+    return feed if Rails.env == "test" && feed.is_a?(String)
+    return feed.string_for_classifier if Rails.env == "test" && feed.is_a?(Feed)
+
     if is_naive_bayes?
-      filtered_str = nb_filter_string( str )
+      filtered_str = nb_filter_string( feed.string_for_classifier )
       return nb_get_features( filtered_str )
+    elsif is_rose_naive_bayes?
+      return filter_by_vocabulary( feed.features_for_text_classifier )
     end
   end
 
 
-  def export_nb
-    @nb.export
-  end
-
-
   def form_docs_counts_hash
-    {:docs_count => Hash[docs_counts.collect{|dc| [dc.text_class_id, dc.docs_count] }]}
+    {:docs_count => Hash[text_classes.collect{|tc| [tc.id, docs_counts(tc.id)] }]}
   end
 
 
-  def import_naive_bayes_data options={}
-    ClassifierTextClassFeatureProperty.import_to_naive_bayes( self.id ).merge(form_docs_counts_hash).merge(options)
+  def vocabulary
+    filename = 'big_vocabulary'
+    @vocabulary ||= Marshal.load( File.binread(filename) )
+    return @vocabulary
   end
-
 
 
   private
 
 
-
   def rebuild_classifier
-    @nb = NaiveBayes::NaiveBayes.new if is_naive_bayes?
+    if is_naive_bayes?
+      @classifier = NaiveBayes::NaiveBayes.new
+    end
     get_training_feeds.each do |tc, feeds|
       feeds.each do |feed|
-        train( feed.string_for_classifier, tc )
+        train( feed, tc )
       end
     end
   end
 
-
-  def build_confusion_matrix( feeds )
-    confusion_matrix = {}
-    feeds.each do |feed|
-      str = feed.string_for_classifier
-      classified = classify( str )
-      unless classified
-        @test_data[:uncorrect_data] << [feed.id, feed.text_class.name, str]
-        next
-      end
-      klass_name = TextClass.find( classified[:class] ).name
-      @test_data[:data] << [feed.text_class.name == klass_name, feed.id, feed.text_class.name, klass_name, str, classified[:all_values][0]]
-      confusion_matrix[feed.text_class.name] ||= {}
-      confusion_matrix[feed.text_class.name][klass_name] = confusion_matrix[feed.text_class.name][klass_name].to_i + 1
-    end
-    return confusion_matrix
-  end
-
-
-  include Statistic
-  # Adds classifier performance into @test_data hash
-  def classifier_performance confusion_matrix
-    accuracy = accuracy( confusion_matrix )
-    @test_data[:confusion_matrix] = confusion_matrix
-    @test_data[:accuracy] = accuracy
-    @test_data[:f_measures] = {}
-    text_classes.collect{|tc| tc.name}.each{ |klass_name| @test_data[:f_measures][klass_name] = f_measure(confusion_matrix, klass_name) }
-  end
-
-
-  def pretty_test_data_file file_prefix=nil
-    # +:testing_options+ - test(options); +:data+ - array with [true or false, feed.id, feed.tc.name, tc.name, str];
-    # +:uncorrect_data+ - data not accepted by filter [feed.id, feed.tc.name, str];
-    # +:f_measures+ - hash {tc.name => f_measure}; +:accuracy+; +confusion_matrix+ - hash
-    file = File.new("#{Rails.root}/log/#{file_prefix}classifiers_tests_#{name}.log", 'w')
-
-    str = "#{Time.now} -- Classifier performance id:#{id} name:#{name} \n\n"
-
-    str += "Test options: #{@test_data[:testing_options]} \n\n"
-
-    str += "Accuracy: #{@test_data[:accuracy]} \n\n"
-
-    str += "F-Measures: \n"
-    @test_data[:f_measures].each{ |tc_name, f| str += "f-measure(#{tc_name})=#{f}\n" }
-    str += "\n"
-
-    str += "Confusion Matrix: \n"
-    str += "#{@test_data[:confusion_matrix]}\n\n"
-
-    str += "Uncorrect Data: \n"
-    str += "feed.id\t feed.text_class.name\t feed.string_for_classifier\n"
-    @test_data[:uncorrect_data].each do |row|
-      str += "#{row[0]}\t #{row[1]}\t\t\t #{row[2]}\n"
-    end
-    str += "\n"
-
-    str += "Data: \n"
-    str += "Correct\t id\t feed.text_class\t classified_class\t str\t prob \n"
-    @test_data[:data].sort_by{|data| (data[0] == false ? 0 : 1) }.each do |row|
-      str += "#{row[0]}\t #{row[1]}\t #{row[2]}\t\t #{row[3]}\t\t\t #{row[4]}\t #{row[5]}\n"
-    end
-    str += "\n"
-
-    file.write( str )
-  end
-
-
-  # Training set count for each class
-  def train_set_count
-    if is_naive_bayes?
-      @nb.export[:docs_count].values.min
-    end
-  end
-
-
-  #------------- Naive Bayes Section -------------
-  #-----------------------------------------------
 
   def is_naive_bayes?
     not name[NAIVE_BAYES_NAME].nil?
   end
 
 
-  def preload_naive_bayes options
-    @nb = NaiveBayes::NaiveBayes.new
-    nb_data = import_naive_bayes_data(options)
-    @nb.import!( nb_data[:docs_count], nb_data[:words_count], nb_data[:vocabolary]  )
+  def is_rose_naive_bayes?
+    not name[ROSE_NAIVE_BAYES_NAME].nil?
   end
 
 
-  def save_naive_bayes
-    klass_words_count = @nb.export[:words_count]
-    klass_words_count.each do |klass_id, words_count|
-      words_count.each do |word, cnt|
-        begin
-          tcf =  TextClassFeature.find_or_create_by_text_class_id_and_feature_id( klass_id, Feature.find_or_create_by_token( word ).id )
-          ctcfp = ClassifierTextClassFeatureProperty.find_or_create_by_classifier_id_and_text_class_feature_id( self.id, tcf.id )
-          ctcfp.feature_count = cnt
-          ctcfp.save! if ctcfp.changed?
-        rescue Exception => e
-          str = "Error in save_to_database in Classifier, word-#{word}, cnt-#{cnt}. Exception: #{e}"
-          p str
-          BayesLogger.bayes_logger.error str
-        end
+  def filter_by_vocabulary( features )
+    filtered = []
+    not_in_voc = []
+    features.each do |f|
+      if f.is_a?(Array)
+        filtered += f
+      elsif vocabulary.include?( f )
+        filtered << f
+      else
+        not_in_voc << f
       end
     end
+    return filtered
   end
 
 
-  def nb_filter_string str
-    filtered_str = str.clone
-    # Get regexp through all classes for 'Салават Юлаев' case
-    TextClass.pluck(:name).each do |tc_name|
-      filtered_str.gsub!( Regexp.new(Settings.bayes.regexp[tc_name]), tc_name )
+  def rose_naive_bayes_train( features_vector, klass_id )
+    @classifier.train( features_vector, klass_id )
+  end
+
+
+  # Training set count for each class
+  def train_set_count
+    if is_naive_bayes?
+      @classifier.export[:docs_count].values.min
     end
-    return filtered_str
   end
-
-
-  def nb_get_features str
-    features = []
-    text_classes.each do |tc|
-      matched = str.scan( Regexp.new(Settings.bayes.regexp[tc.name]) )
-      features += [ tc.name ] * matched.count
-    end
-    # Add domain only if present some city named feature
-    unless features.empty?
-      domain = str.scan( Regexp.new( Settings.bayes.regexp["domain"] ) )
-      features << domain[0].split("/")[2] unless domain.empty?
-    end
-    return features
-  end
-
-
-  def naive_bayes_train( features_vector, klass_id )
-    @nb.train( features_vector, klass_id )
-  end
-
-
-  def naive_bayes_classify( features_vector )
-    @nb.classify( features_vector )
-  end
-
 
 end
