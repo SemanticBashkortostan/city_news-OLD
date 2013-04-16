@@ -76,6 +76,7 @@ describe Classifier do
       @train_data.each do |(str, klass)|
         @classifier_nb1.train(str, klass)
       end
+      @classifier_nb1.docs_counts.find_by_text_class_id(TextClass.find_by_name(:c).id).docs_count.should == 3
       @classifier_nb1.save_to_database!
 
       Feature.uniq.pluck(:token).sort.should == @features
