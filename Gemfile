@@ -1,7 +1,7 @@
 #coding: utf-8
 source 'https://rubygems.org'
 
-gem 'rails', '3.2.12'
+gem 'rails', '3.2.13'
 gem 'pg'
 gem 'activeadmin'
 
