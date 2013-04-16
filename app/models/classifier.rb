@@ -15,6 +15,8 @@ class Classifier < ActiveRecord::Base
 
   has_and_belongs_to_many :train_feeds, :class_name => "Feed"
 
+  serialize :parameters, ActiveRecord::Coders::Hstore
+
 
   def train str, klass
     case klass
