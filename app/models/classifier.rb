@@ -9,6 +9,8 @@ class Classifier < ActiveRecord::Base
 
   UNCORRECT_DATA_TAGS = ["uncorrect_data", "uncorrect_classified", "several_class"]
 
+  OTHER_TEXT_CLASS = 500
+
   attr_accessible :name
 
   has_many :classifier_text_class_feature_properties, :dependent => :destroy
@@ -27,6 +29,8 @@ class Classifier < ActiveRecord::Base
         klass_id = TextClass.find_by_name(klass).id
       when TextClass
         klass_id = klass.id
+      when Numeric
+        klass_id = klass
       else
         raise ArgumentError
     end
@@ -73,8 +77,17 @@ class Classifier < ActiveRecord::Base
   # Returns { TextClass => selected_feeds }
   def get_training_feeds
     training_feeds_hash = {}
-    text_classes.each do |text_klass|
-      training_feeds_hash[text_klass] = text_klass.feeds.tagged_with( TRAIN_TAGS, :any => true )
+    if is_rose_naive_bayes?
+      raise Exception if text_classes.count > 1
+      main_text_class = text_classes.first
+      other_text_class = OTHER_TEXT_CLASS
+
+      training_feeds_hash[main_text_class] = main_text_class.feeds.tagged_with( TRAIN_TAGS, :any => true )
+      training_feeds_hash[other_text_class] = Feed.tagged_with( TRAIN_TAGS, :any => true ).where(:text_class_id => TextClass.all - [main_text_class])
+    else
+      text_classes.each do |text_klass|
+        training_feeds_hash[text_klass] = text_klass.feeds.tagged_with( TRAIN_TAGS, :any => true )
+      end
     end
 
     feeds_counts = training_feeds_hash.values.collect{|e| e.count}
@@ -206,10 +219,16 @@ class Classifier < ActiveRecord::Base
 
 
   def rebuild_classifier
+    training_feeds_hash = get_training_feeds
     if is_naive_bayes?
       @classifier = NaiveBayes::NaiveBayes.new
+    elsif is_rose_naive_bayes?
+      training_feeds_count = training_feeds_hash.collect{|k, v| v.count }
+      duplicate_klass = training_feeds_hash.min_by{ |k, v| v.count }.first
+      duplicate_count = ( training_feeds_count[0] - training_feeds_count[1] ).abs
+      @classifier = NaiveBayes::NaiveBayes.new 1.0, :rose, {:rose => {:duplicate_klass => duplicate_klass, :duplicate_count => duplicate_count}}
     end
-    get_training_feeds.each do |tc, feeds|
+    training_feeds_hash.each do |tc, feeds|
       feeds.each do |feed|
         train( feed, tc )
       end
@@ -261,11 +280,11 @@ class Classifier < ActiveRecord::Base
 
 
   def preload_rose_naive_bayes options
-    klass_duplicate_count = JSON.parse(parameters[:rose_duplicate_count]).to_a
+    klass_duplicate_count = JSON.parse(parameters[:rose_duplicate_count]).to_a.first
     @classifier = NaiveBayes::NaiveBayes.new 1.0, :rose, {:rose => { :duplicate_klass => klass_duplicate_count[0], :duplicate_count => klass_duplicate_count[1]} }
     nb_data = import_naive_bayes_data(options)
     nb_data[:average_document_words] = JSON.parse(parameters[:average_document_words])
-    @classifier.import!( nb_data[:docs_count], nb_data[:words_count], nb_data[:vocabolary], nb_data[:average_document_words]  )
+    @classifier.import!( nb_data[:docs_count], nb_data[:words_count], nb_data[:vocabolary], { :average_document_words => nb_data[:average_document_words] }  )
   end
 
 
