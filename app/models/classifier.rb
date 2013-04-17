@@ -37,7 +37,8 @@ class Classifier < ActiveRecord::Base
 
     features_vector = get_features_vector( feed )
     if features_vector.empty?
-      p ["EXCEPTION", str, klass]
+      p ["EXCEPTION", feed, klass]
+      return nil
       raise Exception
     end
 
@@ -53,6 +54,8 @@ class Classifier < ActiveRecord::Base
   end
 
 
+  #TODO: Посмотри ошибку с nil text class - Feed.features for classifier. CM Feed.get_raw_feature_vectors!
+  # получается что для сити лексера требуется инфа о текст классе!
   def classify feed
     features_vector = get_features_vector( feed )
     return nil if features_vector.empty?
@@ -131,9 +134,14 @@ class Classifier < ActiveRecord::Base
     classifier.text_classes = text_klasses
     classifier.save!
     classifier.reload
-    training_feeds = classifier.get_training_feeds
-    classifier.preload_classifier
-    training_feeds.each do |text_klass, feeds|
+    training_feeds_hash = classifier.get_training_feeds
+    if classifier.is_rose_naive_bayes?
+      duplicate_info = classifier.get_duplicate_klass_and_count(training_feeds_hash)
+      classifier.preload_classifier :duplicate_info => duplicate_info
+    else
+      classifier.preload_classifier
+    end
+    training_feeds_hash.each do |text_klass, feeds|
       feeds.each do |feed|
         classifier.train( feed, text_klass )
         classifier.train_feeds << feed
@@ -161,9 +169,7 @@ class Classifier < ActiveRecord::Base
 
 
   def form_docs_counts_hash
-    p text_classes
-    p self
-    {:docs_count => Hash[text_classes.collect{|tc| [tc.id, docs_counts(tc.id)] }]}
+    {:docs_count => Hash[text_classes.collect{|tc| tc.is_a?(TextClass) ? [tc.id, docs_counts(tc.id)] : [tc, docs_counts(tc)]  }]}
   end
 
 
@@ -187,7 +193,9 @@ class Classifier < ActiveRecord::Base
 
   def text_classes
     return [] if parameters["text_classes"].blank?
-    TextClass.where :id => JSON.parse(parameters["text_classes"].to_s)
+    tcs = TextClass.where :id => JSON.parse(parameters["text_classes"].to_s)
+    tcs << OTHER_TEXT_CLASS if JSON.parse(parameters["text_classes"].to_s).include?(OTHER_TEXT_CLASS)
+    tcs
   end
 
 
@@ -217,25 +225,14 @@ class Classifier < ActiveRecord::Base
   #-----------------end of--HSTORE-actions --------------------------------------------------
 
 
-  private
-
-
-  def rebuild_classifier
-    training_feeds_hash = get_training_feeds
-    if is_naive_bayes?
-      @classifier = NaiveBayes::NaiveBayes.new
-    elsif is_rose_naive_bayes?
-      training_feeds_count = training_feeds_hash.collect{|k, v| v.count }
-      duplicate_klass = training_feeds_hash.min_by{ |k, v| v.count }.first
-      duplicate_count = ( training_feeds_count[0] - training_feeds_count[1] ).abs
-      @classifier = NaiveBayes::NaiveBayes.new 1.0, :rose, {:rose => {:duplicate_klass => duplicate_klass, :duplicate_count => duplicate_count}}
-    end
-    training_feeds_hash.each do |tc, feeds|
-      feeds.each do |feed|
-        train( feed, tc )
-      end
-    end
+  def get_duplicate_klass_and_count(training_feeds_hash)
+    training_feeds_count = training_feeds_hash.collect { |k, v| v.count }
+    duplicate_klass = training_feeds_hash.min_by { |k, v| v.count }.first
+    duplicate_klass = duplicate_klass.id if duplicate_klass.is_a?( TextClass )
+    duplicate_count = (training_feeds_count[0] - training_feeds_count[1]).abs
+    return [duplicate_klass, duplicate_count]
   end
+
 
 
   def is_naive_bayes?
@@ -248,9 +245,34 @@ class Classifier < ActiveRecord::Base
   end
 
 
+  def debug_classifier
+    @classifier
+  end
+
+
+  private
+
+
+  def rebuild_classifier
+    training_feeds_hash = get_training_feeds
+    if is_naive_bayes?
+      @classifier = NaiveBayes::NaiveBayes.new
+    elsif is_rose_naive_bayes?
+      duplicate_klass, duplicate_count = get_duplicate_klass_and_count(training_feeds_hash)
+      @classifier = NaiveBayes::NaiveBayes.new 1.0, :rose, {:rose => {:duplicate_klass => duplicate_klass, :duplicate_count => duplicate_count}}
+    end
+    training_feeds_hash.each do |tc, feeds|
+      feeds.each do |feed|
+        train( feed, tc )
+      end
+    end
+  end
+
+
   def filter_by_vocabulary( features )
     filtered = []
     not_in_voc = []
+    return filtered if features.blank?
     features.each do |f|
       if f.is_a?(Array)
         filtered += f
@@ -276,17 +298,20 @@ class Classifier < ActiveRecord::Base
 
   def save_rose_naive_bayes
     save_naive_bayes
-    parameters[:rose_duplicate_count] = @classifier.export[:rose_duplicate_count]
-    parameters[:average_document_words] = @classifier.export[:average_document_words]
+    parameters[:rose_duplicate_count] = @classifier.export[:rose_duplicate_count].to_a.first.to_json
+    parameters[:average_document_words] = @classifier.export[:average_document_words].to_json
   end
 
 
-  #TODO: А что делать если переходишь с make_from_text_classes? Ведь неизвестно что duplicate class и т.п!!!
   def preload_rose_naive_bayes options
-    klass_duplicate_count = JSON.parse(parameters[:rose_duplicate_count]).to_a.first
-    @classifier = NaiveBayes::NaiveBayes.new 1.0, :rose, {:rose => { :duplicate_klass => klass_duplicate_count[0], :duplicate_count => klass_duplicate_count[1]} }
+    if options[:duplicate_info]
+      duplicate_class, duplicate_count = options[:duplicate_info]
+    else
+      duplicate_class, duplicate_count = JSON.parse(parameters["rose_duplicate_count"])
+    end
+    @classifier = NaiveBayes::NaiveBayes.new 1.0, :rose, {:rose => { :duplicate_klass => duplicate_class, :duplicate_count => duplicate_count} }
     nb_data = import_naive_bayes_data(options)
-    nb_data[:average_document_words] = JSON.parse(parameters[:average_document_words])
+    nb_data[:average_document_words] = Hash[JSON.parse(parameters["average_document_words"]).map{|(k,v)| [k.to_i, v]}] if parameters["average_document_words"]
     @classifier.import!( nb_data[:docs_count], nb_data[:words_count], nb_data[:vocabolary], { :average_document_words => nb_data[:average_document_words] }  )
   end
 
