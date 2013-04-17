@@ -27,7 +27,8 @@ module ClassifierPerformance
     tags_options ||= {}
     feeds_count ||= ( train_set_count * 0.2 ).ceil
     testing_feeds = []
-    text_classes.each do |tc|
+    text_classes.each_with_index do |tc, ind|
+      tc = TextClass.all - text_classes if tc == Classifier::OTHER_TEXT_CLASS
       tmp_tags_options = tags_options.clone
       scope = Feed.where(:text_class_id => tc).tagged_with( tags, tmp_tags_options )
       testing_feeds << ( (is_random == true ? scope.order("RANDOM()").limit(feeds_count) : scope.limit(feeds_count)) )
