@@ -49,55 +49,14 @@ class Classifier < ActiveRecord::Base
   end
 
 
-  #---------- HSTORE - actions --------------------------------------------------
-  def docs_counts(text_class_id)
-    parameters["docs_counts_#{text_class_id}"].to_i
-  end
-
-  # +couple+ - hash like {:text_class_id => xx, :count => xx}
-  def docs_counts=(couple)
-    parameters["docs_counts_#{couple[:text_class_id]}"] = couple[:count]
-  end
-
-
-  def text_classes
-    return [] if parameters["text_classes"].blank?
-    TextClass.where :id => JSON.parse(parameters["text_classes"].to_s)  
-  end
-
-
-  def text_classes=(arr)
-    if arr[0].is_a? TextClass
-      parameters["text_classes"] = arr.collect{|e| e.id} 
-    else
-      parameters["text_classes"] = arr
-    end
-  end
-
-
-  def add_to_text_classes(elem)
-    parameters["text_classes"] ||= [] #NOTE: Need move into initialize
-    parameters["text_classes"].is_a?( String ) ? arr = JSON.parse(parameters["text_classes"]).to_set : arr = parameters["text_classes"].to_set      
-    arr << elem
-    parameters["text_classes"] = arr.to_a    
-  end
-
-
-  def delete_from_text_classes(text_class)
-    tcs = text_classes
-    tcs.delete(text_class)
-    self.text_classes = tcs
-    destroy_key(:parameters, "docs_counts_#{text_class.id}")
-  end
-
-  #-----------------end of--HSTORE-actions --------------------------------------------------
-
-
   def classify feed
     features_vector = get_features_vector( feed )
     return nil if features_vector.empty?
-    if is_naive_bayes?
-      naive_bayes_classify( features_vector )
+    case
+      when is_naive_bayes?
+        naive_bayes_classify( features_vector )
+      when is_rose_naive_bayes?
+        rose_naive_bayes_classify( features_vector )
     end
   end
 
@@ -133,6 +92,8 @@ class Classifier < ActiveRecord::Base
   def save_to_database!
     if is_naive_bayes?
       save_naive_bayes
+    elsif is_rose_naive_bayes?
+      save_rose_naive_bayes
     end
     save!
     reload
@@ -143,6 +104,8 @@ class Classifier < ActiveRecord::Base
   def preload_classifier( options = {} )
     if is_naive_bayes?
       preload_naive_bayes options
+    elsif is_rose_naive_bayes?
+      preload_rose_naive_bayes options
     end
   end
 
@@ -196,6 +159,49 @@ class Classifier < ActiveRecord::Base
   end
 
 
+    #---------- HSTORE - actions --------------------------------------------------
+  def docs_counts(text_class_id)
+    parameters["docs_counts_#{text_class_id}"].to_i
+  end
+
+  # +couple+ - hash like {:text_class_id => xx, :count => xx}
+  def docs_counts=(couple)
+    parameters["docs_counts_#{couple[:text_class_id]}"] = couple[:count]
+  end
+
+
+  def text_classes
+    return [] if parameters["text_classes"].blank?
+    TextClass.where :id => JSON.parse(parameters["text_classes"].to_s)
+  end
+
+
+  def text_classes=(arr)
+    if arr[0].is_a? TextClass
+      parameters["text_classes"] = arr.collect{|e| e.id}
+    else
+      parameters["text_classes"] = arr
+    end
+  end
+
+
+  def add_to_text_classes(elem)
+    parameters["text_classes"] ||= [] #NOTE: Need move into initialize
+    parameters["text_classes"].is_a?( String ) ? arr = JSON.parse(parameters["text_classes"]).to_set : arr = parameters["text_classes"].to_set
+    arr << elem
+    parameters["text_classes"] = arr.to_a
+  end
+
+
+  def delete_from_text_classes(text_class)
+    tcs = text_classes
+    tcs.delete(text_class)
+    self.text_classes = tcs
+    destroy_key(:parameters, "docs_counts_#{text_class.id}")
+  end
+  #-----------------end of--HSTORE-actions --------------------------------------------------
+
+
   private
 
 
@@ -239,6 +245,27 @@ class Classifier < ActiveRecord::Base
 
   def rose_naive_bayes_train( features_vector, klass_id )
     @classifier.train( features_vector, klass_id )
+  end
+
+
+  def rose_naive_bayes_classify(features_vector)
+    @classifier.classify( features_vector )
+  end
+
+
+  def save_rose_naive_bayes
+    save_naive_bayes
+    parameters[:rose_duplicate_count] = @classifier.export[:rose_duplicate_count]
+    parameters[:average_document_words] = @classifier.export[:average_document_words]
+  end
+
+
+  def preload_rose_naive_bayes options
+    klass_duplicate_count = JSON.parse(parameters[:rose_duplicate_count]).to_a
+    @classifier = NaiveBayes::NaiveBayes.new 1.0, :rose, {:rose => { :duplicate_klass => klass_duplicate_count[0], :duplicate_count => klass_duplicate_count[1]} }
+    nb_data = import_naive_bayes_data(options)
+    nb_data[:average_document_words] = JSON.parse(parameters[:average_document_words])
+    @classifier.import!( nb_data[:docs_count], nb_data[:words_count], nb_data[:vocabolary], nb_data[:average_document_words]  )
   end
 
 
