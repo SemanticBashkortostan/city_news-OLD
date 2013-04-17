@@ -131,8 +131,8 @@ class Classifier < ActiveRecord::Base
     classifier.text_classes = text_klasses
     classifier.save!
     classifier.reload
-    classifier.preload_classifier
     training_feeds = classifier.get_training_feeds
+    classifier.preload_classifier
     training_feeds.each do |text_klass, feeds|
       feeds.each do |feed|
         classifier.train( feed, text_klass )
@@ -161,6 +161,8 @@ class Classifier < ActiveRecord::Base
 
 
   def form_docs_counts_hash
+    p text_classes
+    p self
     {:docs_count => Hash[text_classes.collect{|tc| [tc.id, docs_counts(tc.id)] }]}
   end
 
@@ -279,6 +281,7 @@ class Classifier < ActiveRecord::Base
   end
 
 
+  #TODO: А что делать если переходишь с make_from_text_classes? Ведь неизвестно что duplicate class и т.п!!!
   def preload_rose_naive_bayes options
     klass_duplicate_count = JSON.parse(parameters[:rose_duplicate_count]).to_a.first
     @classifier = NaiveBayes::NaiveBayes.new 1.0, :rose, {:rose => { :duplicate_klass => klass_duplicate_count[0], :duplicate_count => klass_duplicate_count[1]} }
