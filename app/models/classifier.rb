@@ -40,7 +40,7 @@ class Classifier < ActiveRecord::Base
     features_vector = get_features_vector( feed )
     if features_vector.empty?
       p ["EXCEPTION", feed, klass]
-      return nil
+      #return nil
       raise Exception
     end
 
@@ -56,8 +56,6 @@ class Classifier < ActiveRecord::Base
   end
 
 
-  #TODO: Посмотри ошибку с nil text class - Feed.features for classifier. CM Feed.get_raw_feature_vectors!
-  # получается что для сити лексера требуется инфа о текст классе!
   def classify feed
     features_vector = get_features_vector( feed )
     return nil if features_vector.empty?
@@ -303,6 +301,9 @@ class Classifier < ActiveRecord::Base
     parameters[:rose_duplicate_count] = @classifier.export[:rose_duplicate_count].to_a.first.to_json
     parameters[:average_document_words] = @classifier.export[:average_document_words].to_json
   end
+
+
+  #TODO: Необходимо продумать случай с active learning для ROSE NB
 
 
   def preload_rose_naive_bayes options
