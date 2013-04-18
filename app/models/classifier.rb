@@ -20,6 +20,8 @@ class Classifier < ActiveRecord::Base
 
   serialize :parameters, ActiveRecord::Coders::Hstore
 
+  attr_reader :class_id_for_rose
+
 
   def train feed, klass
     case klass
@@ -309,6 +311,7 @@ class Classifier < ActiveRecord::Base
     else
       duplicate_class, duplicate_count = JSON.parse(parameters["rose_duplicate_count"])
     end
+    @class_id_for_rose = text_classes.find{ |e| e.is_a?(TextClass) }.id
     @classifier = NaiveBayes::NaiveBayes.new 1.0, :rose, {:rose => { :duplicate_klass => duplicate_class, :duplicate_count => duplicate_count} }
     nb_data = import_naive_bayes_data(options)
     nb_data[:average_document_words] = Hash[JSON.parse(parameters["average_document_words"]).map{|(k,v)| [k.to_i, v]}] if parameters["average_document_words"]

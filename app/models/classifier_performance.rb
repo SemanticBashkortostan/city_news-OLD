@@ -33,7 +33,11 @@ module ClassifierPerformance
       scope = Feed.where(:text_class_id => tc).tagged_with( tags, tmp_tags_options )
       testing_feeds << ( (is_random == true ? scope.order("RANDOM()").limit(feeds_count) : scope.limit(feeds_count)) )
     end
-    return testing_feeds.flatten
+    testing_feeds.flatten!
+    if is_rose_naive_bayes?
+      testing_feeds.each{|feed| feed.text_class_id = Classifier::OTHER_TEXT_CLASS if feed.text_class_id != @class_id_for_rose}
+    end
+    return testing_feeds
   end
 
 
@@ -43,13 +47,13 @@ module ClassifierPerformance
        str = feed.string_for_classifier
        classified = classify( feed )
        unless classified
-         @test_data[:uncorrect_data] << [feed.id, feed.text_class.name, str]
+         @test_data[:uncorrect_data] << [feed.id, feed.text_class_id, str]
          next
        end
-       klass_name = TextClass.find( classified[:class] ).name
-       @test_data[:data] << [feed.text_class.name == klass_name, feed.id, feed.text_class.name, klass_name, str, classified[:all_values][0]]
-       confusion_matrix[feed.text_class.name] ||= {}
-       confusion_matrix[feed.text_class.name][klass_name] = confusion_matrix[feed.text_class.name][klass_name].to_i + 1
+       klass_id = TextClass.find_by_id( classified[:class] ).try( :id ) || Classifier::OTHER_TEXT_CLASS
+       @test_data[:data] << [feed.text_class_id == klass_id, feed.id, feed.text_class_id, klass_id, str, classified[:all_values][0]]
+       confusion_matrix[feed.text_class_id] ||= {}
+       confusion_matrix[feed.text_class_id][klass_id] = confusion_matrix[feed.text_class_id][klass_id].to_i + 1
      end
      return confusion_matrix
    end
@@ -62,7 +66,7 @@ module ClassifierPerformance
      @test_data[:confusion_matrix] = confusion_matrix
      @test_data[:accuracy] = accuracy
      @test_data[:f_measures] = {}
-     text_classes.collect{|tc| tc.name}.each{ |klass_name| @test_data[:f_measures][klass_name] = f_measure(confusion_matrix, klass_name) }
+     text_classes.collect{|tc| tc.is_a?(TextClass) ? tc.id : tc}.each{ |klass_id| @test_data[:f_measures][klass_id] = f_measure(confusion_matrix, klass_id) }
    end
 
 
@@ -86,7 +90,7 @@ module ClassifierPerformance
      str += "#{@test_data[:confusion_matrix]}\n\n"
 
      str += "Uncorrect Data: \n"
-     str += "feed.id\t feed.text_class.name\t feed.string_for_classifier\n"
+     str += "feed.id\t feed.text_class_id\t feed.string_for_classifier\n"
      @test_data[:uncorrect_data].each do |row|
        str += "#{row[0]}\t #{row[1]}\t\t\t #{row[2]}\n"
      end

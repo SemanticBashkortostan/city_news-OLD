@@ -136,11 +136,15 @@ class Feed < ActiveRecord::Base
   end
 
 
-  def get_raw_feature_vectors
-    other_cities_regexp = Hash[(TextClass.pluck(:name) - [text_class.name]).map{|e| [TextClass.find_by_name(e).id, Regexp.new(Settings.bayes.regexp[e]) ]}]
-    city_lexer = CityLexer.new({ :text_class_id => text_class.id, :main_city_regexp => Regexp.new( Settings.bayes.regexp[text_class.name] ), 
-                                 :other_classes => other_cities_regexp } )
-    city_lexer.city_news_mode = 1
+  def get_raw_feature_vectors options={}
+    if text_class
+      other_cities_regexp = Hash[(TextClass.pluck(:name) - [text_class.name]).map{|e| [TextClass.find_by_name(e).id, Regexp.new(Settings.bayes.regexp[e]) ]}]
+      city_lexer = CityLexer.new({ :text_class_id => text_class.id, :main_city_regexp => Regexp.new( Settings.bayes.regexp[text_class.name] ),
+                                   :other_classes => other_cities_regexp } )
+      city_lexer.city_news_mode = options[:city_news_mode] || 1
+    else
+      city_lexer = CityLexer.new
+    end
 
     sentence_split_regexp = /[.!?]/
     text = title.to_s + "." + summary.to_s
