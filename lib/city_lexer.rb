@@ -206,12 +206,12 @@ class CityLexer
 
 
   def left_regexp word
-    Regexp.new "([[:word:]]+.)(#{word})"
+    Regexp.new "([[:word:]]+.)(#{Regexp.escape(word)})"
   end
 
 
   def right_regexp word 
-    Regexp.new "(#{word})+.([[:word:]]+)"
+    Regexp.new "(#{Regexp.escape(word)})+.([[:word:]]+)"
   end
 
 end
