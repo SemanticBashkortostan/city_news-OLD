@@ -543,6 +543,36 @@ ALTER SEQUENCE text_classes_id_seq OWNED BY text_classes.id;
 
 
 --
+-- Name: text_classes_vocabulary_entries; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE text_classes_vocabulary_entries (
+    id integer NOT NULL,
+    text_class_id integer,
+    vocabulary_entry_id integer
+);
+
+
+--
+-- Name: text_classes_vocabulary_entries_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE text_classes_vocabulary_entries_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: text_classes_vocabulary_entries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE text_classes_vocabulary_entries_id_seq OWNED BY text_classes_vocabulary_entries.id;
+
+
+--
 -- Name: users; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -591,6 +621,39 @@ CREATE TABLE users_roles (
     user_id integer,
     role_id integer
 );
+
+
+--
+-- Name: vocabulary_entries; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE vocabulary_entries (
+    id integer NOT NULL,
+    token character varying(255),
+    regexp_rule character varying(255),
+    state integer,
+    created_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: vocabulary_entries_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE vocabulary_entries_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: vocabulary_entries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE vocabulary_entries_id_seq OWNED BY vocabulary_entries.id;
 
 
 --
@@ -702,7 +765,21 @@ ALTER TABLE ONLY text_classes ALTER COLUMN id SET DEFAULT nextval('text_classes_
 -- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
+ALTER TABLE ONLY text_classes_vocabulary_entries ALTER COLUMN id SET DEFAULT nextval('text_classes_vocabulary_entries_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
+--
+
 ALTER TABLE ONLY users ALTER COLUMN id SET DEFAULT nextval('users_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY vocabulary_entries ALTER COLUMN id SET DEFAULT nextval('vocabulary_entries_id_seq'::regclass);
 
 
 --
@@ -818,11 +895,27 @@ ALTER TABLE ONLY text_classes
 
 
 --
+-- Name: text_classes_vocabulary_entries_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY text_classes_vocabulary_entries
+    ADD CONSTRAINT text_classes_vocabulary_entries_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: users_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
 --
 
 ALTER TABLE ONLY users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: vocabulary_entries_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY vocabulary_entries
+    ADD CONSTRAINT vocabulary_entries_pkey PRIMARY KEY (id);
 
 
 --
@@ -959,6 +1052,13 @@ CREATE UNIQUE INDEX unique_schema_migrations ON schema_migrations USING btree (v
 
 
 --
+-- Name: voc_entry_tc_index; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX voc_entry_tc_index ON text_classes_vocabulary_entries USING btree (text_class_id, vocabulary_entry_id);
+
+
+--
 -- PostgreSQL database dump complete
 --
 
@@ -1009,3 +1109,7 @@ INSERT INTO schema_migrations (version) VALUES ('20130305071745');
 INSERT INTO schema_migrations (version) VALUES ('20130416131140');
 
 INSERT INTO schema_migrations (version) VALUES ('20130416131219');
+
+INSERT INTO schema_migrations (version) VALUES ('20130422115114');
+
+INSERT INTO schema_migrations (version) VALUES ('20130422122127');
