@@ -59,7 +59,12 @@ class Feed < ActiveRecord::Base
     raw_feature_vectors = get_raw_feature_vectors   
     fvs = city_and_named_features(raw_feature_vectors).flatten
     return nil if fvs.empty?
-    fvs = fvs.collect{|e| WordProcessor.stem(e[:token], e[:quoted]) }          
+    fvs = fvs.collect{|e| WordProcessor.stem(e[:token], e[:quoted]) }     
+    # Vocabulary Entry with many OR conditioned where.
+    # Then Vocabulary Entry with regexp rules
+    # --- What do we do with domain ????     
+    ## ------ If regexp rule - OK, it will return domain if token is nil. OK try with domain and without it.
+    ## ------ And at this case we need only string_for_classifier!
     feature_vector = fvs.find_all{|e| e.length > 2}    
     feature_vector << downcased_city_features.find_all{|e| e.length > 2}
   end

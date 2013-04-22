@@ -31,7 +31,7 @@ class VocabularyEntry < ActiveRecord::Base
     return found if found    
     if is_rule
       scope.rules.each do |rule|
-        return (rule.token || string) if string =~ rule.regexp_rule
+        return (rule.token || string) if string =~ Regexp.new(rule.regexp_rule)
       end
     end  	
   end
