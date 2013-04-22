@@ -63,7 +63,7 @@ class Feed < ActiveRecord::Base
     # Vocabulary Entry with many OR conditioned where.
     # Then Vocabulary Entry with regexp rules
     # --- What do we do with domain ????     
-    ## ------ If regexp rule - OK, it will return domain if token is nil. OK try with domain and without it.
+    ## ------ If regexp rule then it may works, it will return domain if token is nil. OK try with domain and without it.
     ## ------ And at this case we need only string_for_classifier!
     feature_vector = fvs.find_all{|e| e.length > 2}    
     feature_vector << downcased_city_features.find_all{|e| e.length > 2}
