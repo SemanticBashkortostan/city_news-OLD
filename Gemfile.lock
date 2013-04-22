@@ -294,6 +294,7 @@ GEM
       multi_json (~> 1.0)
       rack (~> 1.0)
       tilt (~> 1.1, != 1.3.0)
+    state_machine (1.2.0)
     sunspot (2.0.0)
       pr_geohash (~> 1.0)
       rsolr (~> 1.0.7)
@@ -376,6 +377,7 @@ DEPENDENCIES
   simple_form (>= 2.0.4)
   simpleidn
   sitemap_generator
+  state_machine
   sunspot_rails
   sunspot_solr
   therubyracer (>= 0.10.2)
