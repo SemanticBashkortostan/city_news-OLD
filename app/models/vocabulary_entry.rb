@@ -13,7 +13,6 @@ class VocabularyEntry < ActiveRecord::Base
   has_and_belongs_to_many :text_classes
 
 
-  scope :accepted, where(:state => ACCEPTED_STATE)
   scope :rules, where('regexp_rule is NOT NULL')
 
 
@@ -23,6 +22,7 @@ class VocabularyEntry < ActiveRecord::Base
     state :testing, :value => TESTING_STATE
     state :not_in_vocabulary, :value => NOT_IN_VOCABULARY_STATE
   end
+  scope :accepted, with_state( :accepted )
 
 
   def self.has?( string, is_rule = nil )
