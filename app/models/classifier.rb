@@ -40,8 +40,9 @@ class Classifier < ActiveRecord::Base
     features_vector = get_features_vector( feed )
     if features_vector.empty?
       p ["EXCEPTION", feed, klass]
-      #return nil
-      raise Exception
+      DevelopmentLogger.logger.error ["Empty feature vector in Classifier#train!!!", feed, klass, features_vector]
+      return nil
+      #raise Exception
     end
 
     self.docs_counts = {:text_class_id => klass_id, :count => docs_counts(klass_id) + 1}

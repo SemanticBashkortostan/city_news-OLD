@@ -3,7 +3,8 @@
 module ClassifierPerformance
   TEST_TAGS  = ["dev_test"]
 
-    # Test classifier by fetching feeds with specific tags
+  # Test classifier by fetching feeds with specific tags
+  # For test ROSE-MNB you must need use :feeds_count option
   # +options[:tags]+ - list of tags, like ["dev_test", "production"]
   # +options[:tags_options]+ - parameter which responses how to fetch, like {:match_all => true} or {:any => true}
   # +options[:feeds_count]+ - default fetch 20% from train_set_count feeds with specific tags
@@ -12,6 +13,7 @@ module ClassifierPerformance
     # +:testing_options+ - test(options); +:data+ - array with [true or false, feed.id, feed.tc.name, tc.name, str];
     # +:uncorrect_data+ - data not accepted by filter [feed.id, feed.tc.name, str];
     # +:f_measures+ - hash {tc.name => f_measure}; +:accuracy+; +confusion_matrix+ - hash
+    raise "You need pass at least :feeds_count for ROSE-MNB" if is_rose_naive_bayes? && !options[:feeds_count]
     @test_data = {:testing_options => options, :data => [], :uncorrect_data => []}
     test_feeds = get_testing_feeds( options[:tags], options[:tags_options], options[:feeds_count], options[:is_random] )
     confusion_matrix = build_confusion_matrix( test_feeds )
