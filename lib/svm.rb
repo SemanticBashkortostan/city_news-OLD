@@ -9,6 +9,7 @@ class Svm
 
 
   #NOTE: Т.е тут мы получаем вектор признаков к которому уже применили regexp_rule из VocabularyEntry. И как же тогда формировать вектор признаков??? А у нас всё равно регескпы мапятса в токены)
+  # А хотя там домен всё равно не участвовал, т.к у него token - nil!
   def get_svm_vectors_from( data, vector_length=nil, klass_id )
     vector_length ||= @vocabulary.count    
     vectors = []
@@ -16,11 +17,15 @@ class Svm
       vector = Array.new vector_length, 0
       feature_vector = feed.features_for_text_classifier
       if feature_vector
+        vector_include_one = false
         feature_vector.each do |token|
           index = @vocabulary.index(token)
-          vector[index] = 1 if index # Потом можно попробовать term_freq использовать вместо has_term?
+          if index # Потом можно попробовать term_freq использовать вместо has_term?
+            vector[index] = 1
+            vector_include_one = true
+          end
         end
-        vectors << [(klass_id == feed.text_class_id ? 1 : -1), vector] if vector.present? && vector.include?(1)
+        vectors << [(klass_id == feed.text_class_id ? 1 : -1), vector] if vector.present? && vector_include_one
       end
     end
     return vectors 
