@@ -127,6 +127,8 @@ class Classifier < ActiveRecord::Base
 
   # +options+ description:
   # options[:name] - name of classifier
+  # For ROSE-MNB pass only one class 'cause it work by one vs all scheme
+  # +text_classes+ - should be an array
   def self.make_from_text_classes( text_klasses, options = {} )
     raise ArgumentError if text_klasses.blank? || options[:name].blank?
 
@@ -163,7 +165,7 @@ class Classifier < ActiveRecord::Base
       filtered_str = nb_filter_string( feed.string_for_classifier )
       return nb_get_features( filtered_str )
     elsif is_rose_naive_bayes?
-      return filter_by_vocabulary( feed.features_for_text_classifier )
+      return feed.features_for_text_classifier
     end
   end
 

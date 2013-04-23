@@ -56,7 +56,7 @@ class Feed < ActiveRecord::Base
 
 
   def features_for_text_classifier
-    raw_feature_vectors = get_raw_feature_vectors   
+    raw_feature_vectors = get_raw_feature_vectors( :for_text_classifier => true )
     fvs = city_and_named_features(raw_feature_vectors).flatten
     return nil if fvs.empty?
     fvs = fvs.collect{|e| WordProcessor.stem(e[:token], e[:quoted]) }     
@@ -134,7 +134,7 @@ class Feed < ActiveRecord::Base
 
 
   def get_raw_feature_vectors options={}
-    if text_class #TODO: If text class - Для DIPRE, нужно продумать как передавать Regexp Для города чтобы извлекались Уфа, Ишимбай и т.п
+    if text_class && !options[:for_text_classifier]#TODO: If text class - Для DIPRE, нужно продумать как передавать Regexp Для города чтобы извлекались Уфа, Ишимбай и т.п
       rules = VocabularyEntry.accepted.rules.includes(:text_classes).
           where('text_classes_vocabulary_entries.text_class_id != ? && text_classes_vocabulary_entries.text_class_id is NOT NULL', text_class.id)
       other_cities_regexp = Hash[rules.map{|ve| [ve.text_classes.first.id, Regexp.new(ve.regexp_rule)]}]
