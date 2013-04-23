@@ -29,7 +29,7 @@ class Feed < ActiveRecord::Base
 
 
   def string_for_classifier
-    title.to_s + " " + summary.to_s + " " + "Domain: #{url}"
+    title.to_s + " " + summary.to_s + " " + "Domain: #{self.domain}"
   end
 
 
@@ -65,8 +65,9 @@ class Feed < ActiveRecord::Base
     # --- What do we do with domain ????     
     ## ------ If regexp rule then it may works, it will return domain if token is nil. OK try with domain and without it.
     ## ------ And at this case we need only string_for_classifier!
-    feature_vector = fvs.find_all{|e| e.length > 2}    
-    feature_vector << downcased_city_features.find_all{|e| e.length > 2}
+    feature_vector = fvs.find_all{|word| word.length > 2 && VocabularyEntry.has?( word )}
+    feature_vector += VocabularyEntry.words_matches_rules( string_for_classifier )
+    feature_vector
   end
 
 
@@ -78,15 +79,6 @@ class Feed < ActiveRecord::Base
 
   protected
 
-
-
-  def downcased_city_features
-    features = []
-    TextClass.pluck(:name).each do |tc_name|
-      features << (title.to_s + ". " + summary.to_s).scan( Regexp.new(Settings.bayes.regexp.downcased[tc_name]) )
-    end
-    features.flatten.map{ |e| WordProcessor.stem(e, false) }
-  end
 
 
   def city_and_named_features(raw_feature_vectors)
@@ -142,8 +134,10 @@ class Feed < ActiveRecord::Base
 
 
   def get_raw_feature_vectors options={}
-    if text_class
-      other_cities_regexp = Hash[(TextClass.pluck(:name) - [text_class.name]).map{|e| [TextClass.find_by_name(e).id, Regexp.new(Settings.bayes.regexp[e]) ]}]
+    if text_class #TODO: If text class - Для DIPRE, нужно продумать как передавать Regexp Для города чтобы извлекались Уфа, Ишимбай и т.п
+      rules = VocabularyEntry.accepted.rules.includes(:text_classes).
+          where('text_classes_vocabulary_entries.text_class_id != ? && text_classes_vocabulary_entries.text_class_id is NOT NULL', text_class.id)
+      other_cities_regexp = Hash[rules.map{|ve| [ve.text_classes.first.id, Regexp.new(ve.regexp_rule)]}]
       city_lexer = CityLexer.new({ :text_class_id => text_class.id, :main_city_regexp => Regexp.new( Settings.bayes.regexp[text_class.name] ),
                                    :other_classes => other_cities_regexp } )
       city_lexer.city_news_mode = options[:city_news_mode] || 1

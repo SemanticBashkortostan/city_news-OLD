@@ -1038,6 +1038,27 @@ CREATE INDEX index_users_roles_on_user_id_and_role_id ON users_roles USING btree
 
 
 --
+-- Name: index_vocabulary_entries_on_state_and_regexp_rule; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_vocabulary_entries_on_state_and_regexp_rule ON vocabulary_entries USING btree (state, regexp_rule);
+
+
+--
+-- Name: index_vocabulary_entries_on_state_and_token; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_vocabulary_entries_on_state_and_token ON vocabulary_entries USING btree (state, token);
+
+
+--
+-- Name: index_vocabulary_entries_on_token; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_vocabulary_entries_on_token ON vocabulary_entries USING btree (token);
+
+
+--
 -- Name: uniq_nid; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -1113,3 +1134,5 @@ INSERT INTO schema_migrations (version) VALUES ('20130416131219');
 INSERT INTO schema_migrations (version) VALUES ('20130422115114');
 
 INSERT INTO schema_migrations (version) VALUES ('20130422122127');
+
+INSERT INTO schema_migrations (version) VALUES ('20130423051244');

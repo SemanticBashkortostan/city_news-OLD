@@ -28,12 +28,25 @@ class VocabularyEntry < ActiveRecord::Base
   def self.has?( string, is_rule = nil )
     scope = VocabularyEntry.accepted
   	found = scope.find_by_token( string )
-    return found if found    
+    return found if found
+
+    rule_features = []
     if is_rule
       scope.rules.each do |rule|
-        return (rule.token || string) if string =~ Regexp.new(rule.regexp_rule)
+        if string =~ Regexp.new(rule.regexp_rule)
+          ret_val = rule.token
+          ret_val ||= string.scan(Regexp.new(rule.regexp_rule)).first
+          rule_features << ret_val
+        end
       end
-    end  	
+    end
+    return nil if rule_features.blank?
+    return rule_features
+  end
+
+
+  def self.words_matches_rules(string)
+    VocabularyEntry.has?(string, true)
   end
 
 
