@@ -3,50 +3,66 @@
 class Svm
 
   # TRUE_CLASS - for outlier data; FALSE_CLASS - for good data
+  # Because outlier data has text_class equal to nil
   TRUE_CLASS = 1
   FALSE_CLASS = -1
 
 
   # Maybe add timestamp into filenames?
-  def initialize
-    # Maximum test data count
-    @max_test_data = 1000
-    @file_prefix = "#{Rails.root}/"
+  def initialize(filename_prefix = "outlier_city_svm")
+    @max_test_data_count = 1000
+    @file_path = "#{Rails.root}/"
 
-    @filename =  "#{@file_prefix}outlier_city_svm-"
+    @filename =  "#{@file_path}#{filename_prefix}-"
     @train_filename = @filename + "train"
     @test_filename = @filename + "test"
     @classify_filename = @filename + "to_classify"
-    @classifier_filename = @filename + "classifier"
+    @classifier_model_filename = @filename + "classifier"
+    @test_info_filename = "#{@filename}-test_info"
 
     make_vocabulary
   end
 
 
-  #TODO: Add tags to outlier and good feeds
-  def classify( feeds )
+  # Return hash like { :outlier => [...], :good => [...] }
+  def classify(feeds)
     to_classify_vectors = get_svm_vectors_from(feeds)
     write_to_libsvm_file(to_classify_vectors, @classify_filename)
 
     classified_filename = @filename + "classified"
-    system("svm-predict #{@classify_filename} #{@classifier_filename} #{classified_filename}")
+    system("svm-predict #{@classify_filename} #{@classifier_model_filename} #{classified_filename}")
+    classified_hash = {:outlier => [], :good => []}
     File.open(classified_filename, 'r').readlines.each_with_index do |line, ind|
       klass = line.split(" ").first.to_i
-      feeds.delete(ind) if outlier?(klass)
+      outlier?(klass) ? classified_hash[:outlier] << feeds[ind] : classified_hash[:good] << feeds[ind]
     end
-    return feeds
+    return classified_hash
   end
 
 
-  def train_model
-
+  def scale_train_and_test_files
+    system( "svm-scale -u 1 -s range #{@train_filename} > #{@train_filename}.scale" )
+    system( "svm-scale -s range #{@test_filename} > #{@test_filename}.scale" )
   end
 
 
-  def make_training_and_test_sets
+  # params: +scaled+ - true if data already scaled
+  def train_model( params={} )
+    scale_train_and_test_files unless params[:scaled]
+    #???? may be choice svm kernel
+    #???? may be get optimal paratemers
+    train_options = ""
+    train_options += "-g #{params[:g]}" if params[:g]
+    train_options += "-c #{params[:c]}" if params[:c]
+    system("svm-train #{train_options} #{@train_filename} #{@classifier_model_filename}")
+  end
+
+
+  def make_training_and_test_files
     @test_info = ""
-    make_libsvm_model
-    wirte_test_info
+    train_vectors, test_vectors = make_libsvm_train_and_test_vectors
+    make_libsvm_train_and_test_files( train_vectors, test_vectors )
+    make_test_info_file
   end
 
 
@@ -82,14 +98,20 @@ class Svm
   end
 
 
-  def make_libsvm_model
-    @test_info << "SVM for input data filtering \n\n\n"
+  def make_libsvm_train_and_test_files( train_vectors, test_vectors )
+    write_to_libsvm_file(train_vectors, @train_filename)
+    write_to_libsvm_file(test_vectors, @test_filename)
+  end
+
+
+  def make_libsvm_train_and_test_vectors
+    @test_info << "SVM for input data filtering.\n Filename is #{@filename} \n\n\n "
     cities_train_data = Feed.tagged_with(["dev_train", "to_train", "was_trainer"], :any => true).where( :text_class_id => TextClass.all )
     cities_test_data  = Feed.tagged_with(["dev_test"], :any => true).where( :text_class_id => TextClass.all ) +
-                        Feed.tagged_with(["fetched", "production", "classified"], :match_all => true).where( :text_class_id => TextClass.all )
+        Feed.tagged_with(["fetched", "production", "classified"], :match_all => true).where( :text_class_id => TextClass.all )
 
     test_data_count = cities_test_data.count
-    test_data_count = @max_test_data if test_data_count > @max_test_data
+    test_data_count = @max_test_data_count if test_data_count > @max_test_data_count
 
     cities_test_data = cities_test_data.shuffle[0...test_data_count]
 
@@ -108,10 +130,8 @@ class Svm
     test_data = outlier_test_data + cities_test_data
     test_vectors = get_svm_vectors_from( test_data, nil, nil )
 
-    write_to_libsvm_file(train_vectors, @train_filename)
-    write_to_libsvm_file(test_vectors, @test_filename)
+    return [train_vectors, test_vectors]
   end
-
 
 
   def make_vocabulary
@@ -132,13 +152,12 @@ class Svm
   end
 
 
-  def wirte_test_info( filename = "test_info")
-    File.open(@file_prefix + filename, 'w') do |f|
-      f.write @test_info
-    end
+  def make_test_info_file
+    File.open(@test_info_filename, 'w'){ |f| f.write @test_info }
   end
 
 
+  # Currently return only confusion matrix
   def performance( test_filename=@test_filenamet, predict_filename )
     test, predict = [], []
     File.open(test_filename, 'r').readlines.each do |line|
