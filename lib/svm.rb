@@ -46,11 +46,18 @@ class Svm
   end
 
 
+  def choice_optimal_classifier_params
+    output = `svm-grid #{@train_filename}`
+    params_arr = output.split("\n").last.split(" ")
+    {:c => params_arr[0], :g => params_arr[1]}
+  end
+
+
   # params: +scaled+ - true if data already scaled
+  #         +optimize+ - true if you need to run svm-grid to choice g and c
   def train_model( params={} )
     scale_train_and_test_files unless params[:scaled]
-    #???? may be choice svm kernel
-    #???? may be get optimal paratemers
+    params.merge!(choice_optimal_classifier_params) if params[:optimize]
     train_options = ""
     train_options += "-g #{params[:g]}" if params[:g]
     train_options += "-c #{params[:c]}" if params[:c]
