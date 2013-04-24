@@ -7,7 +7,12 @@ class Scheduler::ProductionFeedsFetcher
                :published_at => Time.local( entry.published.year, entry.published.month, entry.published.day, entry.published.hour, entry.published.min ),
                :mark_list => ["fetched", "production"]
              }.merge( options )
-    Feed.create params
+    params[:new] ? Feed.new( params ) : Feed.create( params )
+  end
+
+
+  def make_tmp_feeds entries
+    entries.collect{|entry| create_production_feed(entry, :new => true) }
   end
 
 
@@ -16,6 +21,8 @@ class Scheduler::ProductionFeedsFetcher
     regexp = Regexp.new Settings.bayes.regexp.values.join("|")
     str = entry.title + " " + entry.summary
     not str.scan(regexp).empty?
+
+    @outlier_and_goods[:good].include?(entry)
   end
 
 
@@ -65,6 +72,11 @@ class Scheduler::ProductionFeedsFetcher
     feed = Feedzirra::Feed.fetch_and_parse( paths )
     paths.each do |path|      
       begin
+        tmp_feeds = make_tmp_feeds( feed[path].entries )
+        #TODO: --- look down
+        # Создаем массив @outlier_and_goods
+        # Оттуда уже проверяем production_satisfaction
+        # Кстати, если будешь идти по tmp_feeds, надо не create_production_enty делать, а сразу .create!
         feed[path].entries.each do |entry|
           if production_satisfaction?( entry )
             create_production_feed( entry ) 
