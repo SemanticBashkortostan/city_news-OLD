@@ -85,4 +85,21 @@ class Svm
     end
   end
 
+
+  def performance( test_filename, predict_filename )
+    test, predict = [], []
+    File.open(test_filename, 'r').readlines.each do |line|
+      test << line.split(" ").first
+    end
+    File.open(predict_filename, 'r').readlines.each do |line|
+      predict << line.split(" ").first
+    end
+
+    confusion_matrix = {"1" => {"1"=>0, "-1"=>0}, "-1" => {"1"=>0, "-1"=>0}}
+    for i in 0...test.count
+      confusion_matrix[test[i]][predict[i]] += 1
+    end
+    return confusion_matrix
+  end
+
 end
