@@ -8,8 +8,8 @@ class Svm
   FALSE_CLASS = -1
 
 
-  # Maybe add timestamp into filenames?
-  def initialize(filename_prefix = "outlier_city_svm")
+  # +filename_prefix+ -examples:( folder1/filename or filename or folder1/folder2/filename )
+  def initialize(filename_prefix = "outlier_classifier/outlier_city_svm", params={})
     @max_test_data_count = 1000
     @file_path = "#{Rails.root}/"
 
@@ -25,12 +25,19 @@ class Svm
 
 
   # Return hash like { :outlier => [...], :good => [...] }
-  def classify(feeds)
+  def classify(feeds, need_scaling=true)
     to_classify_vectors = get_svm_vectors_from(feeds)
     write_to_libsvm_file(to_classify_vectors, @classify_filename)
 
-    classified_filename = @filename + "classified"
-    system("svm-predict #{@classify_filename} #{@classifier_model_filename} #{classified_filename}")
+    if need_scaling
+      classify_filename = "#{@classify_filename}.scale"
+      system( "svm-scale -s range #{@classify_filename} > #{@classify_filename}.scale" )
+    else
+      classify_filename = "#{@classify_filename}"
+    end
+
+    classified_filename = classify_filename + "classified"
+    system("svm-predict #{classify_filename} #{@classifier_model_filename} #{classified_filename}")
     classified_hash = {:outlier => [], :good => []}
     File.open(classified_filename, 'r').readlines.each_with_index do |line, ind|
       klass = line.split(" ").first.to_i
@@ -41,7 +48,7 @@ class Svm
 
 
   def scale_train_and_test_files
-    system( "svm-scale -u 1 -s range #{@train_filename} > #{@train_filename}.scale" )
+    system( "svm-scale -l 0 -s range #{@train_filename} > #{@train_filename}.scale" )
     system( "svm-scale -s range #{@test_filename} > #{@test_filename}.scale" )
   end
 
@@ -53,15 +60,28 @@ class Svm
   end
 
 
-  # params: +scaled+ - true if data already scaled
-  #         +optimize+ - true if you need to run svm-grid to choice g and c
+  # params: +need_scaling+ - true if data needs scaled
+  #         +need_optimizing+ - true if you need to run svm-grid to choice g and c
+  #         +g, c+ - svm's gamma and cost
   def train_model( params={} )
-    scale_train_and_test_files unless params[:scaled]
-    params.merge!(choice_optimal_classifier_params) if params[:optimize]
+    if params[:need_scaling]
+      scale_train_and_test_files
+      train_filename = "#{@train_filename}.scale"
+    else
+      train_filename = @train_filename
+    end
+
+    params.merge!(choice_optimal_classifier_params) if params[:need_optimizing]
     train_options = ""
-    train_options += "-g #{params[:g]}" if params[:g]
-    train_options += "-c #{params[:c]}" if params[:c]
-    system("svm-train #{train_options} #{@train_filename} #{@classifier_model_filename}")
+    train_options += " -g #{params[:g]}" if params[:g]
+    train_options += " -c #{params[:c]}" if params[:c]
+
+    system("svm-train #{train_options} #{train_filename} #{@classifier_model_filename}")
+  end
+
+
+  def test_model
+    system("svm-predict #{@test_filename} #{@classifier_model_filename} #{@test_filename}-predicted")
   end
 
 

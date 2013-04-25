@@ -28,4 +28,12 @@ namespace :application do
     end
     VocabularyEntry.find_or_create_by_regexp_rule_and_state Settings.bayes.regexp.domain, VocabularyEntry::ACCEPTED_STATE
   end
+
+
+  desc "Make outlier svm classifier"
+  task :make_outlier_svm_classifier => :environment do
+    svm = Svm.new
+    svm.make_training_and_test_files
+    svm.train_model :need_scaling => true, :need_optimizing => true
+  end
 end
