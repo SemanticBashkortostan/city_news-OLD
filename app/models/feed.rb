@@ -6,7 +6,8 @@ class Feed < ActiveRecord::Base
 
   acts_as_taggable_on :marks
 
-  has_and_belongs_to_many :classifiers
+  has_many :classified_infos, :class_name => 'FeedClassifiedInfo'
+  has_many :classifiers, :through => :classified_infos
 
   validates :url, :uniqueness => true
   validate :summary_or_title_presence
@@ -15,13 +16,6 @@ class Feed < ActiveRecord::Base
   scope :with_text_klass, lambda{ |text_klass_id| without_uncorrect_tags.where('text_class_id = ?', text_klass_id) }
   scope :unclassified_fetched, tagged_with(["fetched", "production"], :match_all => true).without_uncorrect_tags.where(:text_class_id => nil)
   scope :was_trainers, lambda{ |classifier_id| includes(:classifiers).where(:classifiers_feeds => {:classifier_id => classifier_id}) }
-
-
-  searchable do
-    text :title, :stored => true    
-    text :summary, :stored => true    
-  end
-
 
   before_validation :convert_if_punycode_url
   before_save :strip_html_tags

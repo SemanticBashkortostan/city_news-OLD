@@ -16,7 +16,8 @@ class Classifier < ActiveRecord::Base
   has_many :classifier_text_class_feature_properties, :dependent => :destroy
   has_many :text_class_features, :through => :classifier_text_class_feature_properties
 
-  has_and_belongs_to_many :train_feeds, :class_name => "Feed"
+  has_many :feeds_info, :class_name => 'FeedClassifiedInfo'
+  has_many :train_feeds, :through => :feeds_info, :source => :feed
 
   serialize :parameters, ActiveRecord::Coders::Hstore
 
