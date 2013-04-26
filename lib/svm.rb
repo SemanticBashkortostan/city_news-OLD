@@ -1,5 +1,7 @@
 #coding: utf-8
 
+#TODO: Make logging for Svm. Add weight correction for SVM.
+# And here we needn't scaling, 'cause data already scaled into [0,1].
 class Svm
 
   # TRUE_CLASS - for outlier data; FALSE_CLASS - for good data
@@ -14,6 +16,10 @@ class Svm
     @file_path = "#{Rails.root}/"
 
     @filename =  "#{@file_path}#{filename_prefix}-"
+
+    path = @filename.split("/")[0...-1].join("/")
+    FileUtils.mkdir_p(path) unless File.exists?(path)
+
     @train_filename = @filename + "train"
     @test_filename = @filename + "test"
     @classify_filename = @filename + "to_classify"
@@ -31,7 +37,7 @@ class Svm
 
     if need_scaling
       classify_filename = "#{@classify_filename}.scale"
-      system( "svm-scale -s range #{@classify_filename} > #{@classify_filename}.scale" )
+      system( "svm-scale -s range #{@classify_filename} > #{classify_filename}" )
     else
       classify_filename = "#{@classify_filename}"
     end
@@ -49,12 +55,12 @@ class Svm
 
   def scale_train_and_test_files
     system( "svm-scale -l 0 -s range #{@train_filename} > #{@train_filename}.scale" )
-    system( "svm-scale -s range #{@test_filename} > #{@test_filename}.scale" )
+    system( "svm-scale -r range #{@test_filename} > #{@test_filename}.scale" )
   end
 
 
-  def choice_optimal_classifier_params
-    output = `svm-grid #{@train_filename}`
+  def choice_optimal_classifier_params train_filename, additional_options
+    output = `svm-grid #{additional_options} #{train_filename}`
     params_arr = output.split("\n").last.split(" ")
     {:c => params_arr[0], :g => params_arr[1]}
   end
@@ -63,25 +69,26 @@ class Svm
   # params: +need_scaling+ - true if data needs scaled
   #         +need_optimizing+ - true if you need to run svm-grid to choice g and c
   #         +g, c+ - svm's gamma and cost
+  #NOTE: Something wrong with scaling part in code. TOO BAD SMeLLiNG
   def train_model( params={} )
     if params[:need_scaling]
       scale_train_and_test_files
       train_filename = "#{@train_filename}.scale"
-    else
-      train_filename = @train_filename
     end
+    train_filename ||= @train_filename
 
-    params.merge!(choice_optimal_classifier_params) if params[:need_optimizing]
+    params.merge!(choice_optimal_classifier_params(train_filename, params[:additional_options])) if params[:need_optimizing]
     train_options = ""
     train_options += " -g #{params[:g]}" if params[:g]
     train_options += " -c #{params[:c]}" if params[:c]
 
-    system("svm-train #{train_options} #{train_filename} #{@classifier_model_filename}")
+    system("svm-train #{train_options} #{train_filename} #{params[:additional_options]} #{@classifier_model_filename}")
   end
 
 
-  def test_model
-    system("svm-predict #{@test_filename} #{@classifier_model_filename} #{@test_filename}-predicted")
+  def test_model(scaled_filenames = true)
+    test_filename = "#{@test_filename}.scale" if scaled_filenames
+    system("svm-predict #{test_filename} #{@classifier_model_filename} #{test_filename}-predicted")
   end
 
 
@@ -96,6 +103,27 @@ class Svm
   def outlier?(klass)
     klass == TRUE_CLASS
   end
+
+
+  # Currently return only confusion matrix
+  def performance( scaled=true, test_filename=@test_filename, predict_filename=@test_filename+"-predicted" )
+
+    test_filename, predict_filename = "#{@test_filename}.scale", "#{@test_filename}.scale-predicted" if scaled
+    test, predict = [], []
+    File.open(test_filename, 'r').readlines.each do |line|
+      test << line.split(" ").first.to_i
+    end
+    File.open(predict_filename, 'r').readlines.each do |line|
+      predict << line.split(" ").first.to_i
+    end
+
+    confusion_matrix = {TRUE_CLASS => {TRUE_CLASS=>0, FALSE_CLASS=>0}, FALSE_CLASS => {TRUE_CLASS=>0, FALSE_CLASS=>0}}
+    for i in 0...test.count
+      confusion_matrix[test[i]][predict[i]] += 1
+    end
+    return confusion_matrix
+  end
+
 
 
   protected
@@ -183,22 +211,5 @@ class Svm
     File.open(@test_info_filename, 'w'){ |f| f.write @test_info }
   end
 
-
-  # Currently return only confusion matrix
-  def performance( test_filename=@test_filenamet, predict_filename )
-    test, predict = [], []
-    File.open(test_filename, 'r').readlines.each do |line|
-      test << line.split(" ").first.to_i
-    end
-    File.open(predict_filename, 'r').readlines.each do |line|
-      predict << line.split(" ").first.to_i
-    end
-
-    confusion_matrix = {TRUE_CLASS => {TRUE_CLASS=>0, FALSE_CLASS=>0}, FALSE_CLASS => {TRUE_CLASS=>0, FALSE_CLASS=>0}}
-    for i in 0...test.count
-      confusion_matrix[test[i]][predict[i]] += 1
-    end
-    return confusion_matrix
-  end
 
 end
