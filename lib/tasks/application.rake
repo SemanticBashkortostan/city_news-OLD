@@ -36,4 +36,12 @@ namespace :application do
     svm.make_training_and_test_files
     svm.train_model :need_scaling => true, :need_optimizing => true
   end
+
+
+  desc "Make ROSE-MNB one vs all classifiers"
+  task :make_rose_mnb_classifiers => :environment do
+    TextClass.all.each do |tc|
+      Classifier.make_from_text_classes [tc], :name => "#{Classifier::ROSE_NAIVE_BAYES_NAME}-#{tc.eng_name}"
+    end
+  end
 end
