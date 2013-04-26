@@ -236,6 +236,41 @@ ALTER SEQUENCE features_id_seq OWNED BY features.id;
 
 
 --
+-- Name: feed_classified_infos; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE feed_classified_infos (
+    id integer NOT NULL,
+    feed_id integer,
+    classifier_id integer,
+    text_class_id integer,
+    to_train boolean,
+    score double precision,
+    created_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: feed_classified_infos_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE feed_classified_infos_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: feed_classified_infos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE feed_classified_infos_id_seq OWNED BY feed_classified_infos.id;
+
+
+--
 -- Name: feed_sources; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -702,6 +737,13 @@ ALTER TABLE ONLY features ALTER COLUMN id SET DEFAULT nextval('features_id_seq':
 -- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
+ALTER TABLE ONLY feed_classified_infos ALTER COLUMN id SET DEFAULT nextval('feed_classified_infos_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
+--
+
 ALTER TABLE ONLY feed_sources ALTER COLUMN id SET DEFAULT nextval('feed_sources_id_seq'::regclass);
 
 
@@ -828,6 +870,14 @@ ALTER TABLE ONLY docs_counts
 
 ALTER TABLE ONLY features
     ADD CONSTRAINT features_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: feed_classified_infos_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY feed_classified_infos
+    ADD CONSTRAINT feed_classified_infos_pkey PRIMARY KEY (id);
 
 
 --
@@ -965,6 +1015,20 @@ CREATE INDEX index_docs_counts_on_classifier_id ON docs_counts USING btree (clas
 --
 
 CREATE INDEX index_docs_counts_on_text_class_id ON docs_counts USING btree (text_class_id);
+
+
+--
+-- Name: index_feed_classified_infos_on_feed_id; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_feed_classified_infos_on_feed_id ON feed_classified_infos USING btree (feed_id);
+
+
+--
+-- Name: index_feed_classified_infos_on_feed_id_and_classifier_id; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_feed_classified_infos_on_feed_id_and_classifier_id ON feed_classified_infos USING btree (feed_id, classifier_id);
 
 
 --
@@ -1136,3 +1200,5 @@ INSERT INTO schema_migrations (version) VALUES ('20130422115114');
 INSERT INTO schema_migrations (version) VALUES ('20130422122127');
 
 INSERT INTO schema_migrations (version) VALUES ('20130423051244');
+
+INSERT INTO schema_migrations (version) VALUES ('20130426063801');
