@@ -12,11 +12,28 @@ class ClassifiersEnsemble
   # Returns: {:class => klass_id, :recommend_as_train => trueORnil}
   # :recommend_as_train choose by find first entry with maximum :match_count
   # if his :recommend_as_train >= :not_recommend_to_train it will be :recommended_as_train
-  def classify str
+  # strategy can be +:standard+ or +:one_vs_all+
+  def classify feed, strategy=:standard
     multiplicator = 42
     classes_info = {}
+
+    features = case feed.class
+      when String
+        str
+      when Feed
+        feed.features_for_text_classifier
+      end
+
+    case strategy
+      when :standard
+        apply_standard_strategy( features, multiplicator )
+    end
+  end
+
+
+  def apply_standard_strategy( features, multiplicator )
     @classifiers.each do |classifier|
-      cl_info = classifier.classify str
+      cl_info = classifier.classify features
       if cl_info
         klass = cl_info[:class]
         classes_info[klass] ||= {:recommend_to_train => 0, :not_recommend_to_train => 0, :match_count => 0}
