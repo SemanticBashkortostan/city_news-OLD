@@ -1,18 +1,18 @@
 class Scheduler::ProductionFeedsFetcher
 
 
-  def create_production_feed entry, options = {}    
+  def create_production_feed entry, options = {}, only_new=false
     params = {
                :title => entry.title, :url => entry.url, :summary => entry.summary,
                :published_at => Time.local( entry.published.year, entry.published.month, entry.published.day, entry.published.hour, entry.published.min ),
                :mark_list => ["fetched", "production"]
              }.merge( options )
-    params[:new] ? Feed.new( params ) : Feed.create( params )
+    only_new ? Feed.new( params ) : Feed.create( params )
   end
 
 
   def make_tmp_feeds entries
-    entries.collect{|entry| create_production_feed(entry, :new => true) }
+    entries.collect{|entry| create_production_feed(entry, {}, true) }
   end
 
 
@@ -50,11 +50,11 @@ class Scheduler::ProductionFeedsFetcher
   end
 
 
-  def fetch_and_classify
+  def fetch
     max_fetched = 20
     paths = FeedSource.pluck(:url)
     feed = Feedzirra::Feed.fetch_and_parse( paths )
-    paths.each do |path|      
+    paths.each do |path|
       begin
         fetched = 0
         tmp_feeds = make_tmp_feeds( feed[path].entries )
@@ -69,10 +69,22 @@ class Scheduler::ProductionFeedsFetcher
           feed.save!
         end
       rescue Exception => e
-        BayesLogger.bayes_logger.error ["Error in production_feeds:fetch_and_classify #{path}", e]
+        str = ["Error in production_feeds:fetch_and_classify #{path}", e]
+        p str
+        BayesLogger.bayes_logger.error str
       end
     end
+  end
+
+
+  def classify
     Scheduler::Classifier.classify_fetched
+  end
+
+
+  def fetch_and_classify
+    fetch
+    classify
   end
 
 end
