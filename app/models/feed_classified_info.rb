@@ -3,4 +3,7 @@ class FeedClassifiedInfo < ActiveRecord::Base
 
   belongs_to :feed
   belongs_to :classifier
+  belongs_to :text_class
+
+  default_scope where('text_class_id is not NULL')
 end
