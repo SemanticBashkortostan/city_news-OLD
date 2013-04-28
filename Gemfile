@@ -22,6 +22,7 @@ gem 'daemons'
 gem 'clockwork'
 gem 'russian'
 gem 'exception_notification'
+gem 'whenever'
 
 
 gem 'sitemap_generator'
