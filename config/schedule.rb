@@ -18,8 +18,9 @@
 # end
 
 set :job_template, "bash -l -i -c ':job'"
+job_type :custom_ruby_exec, "cd :path && RAILS_ENV=:environment bundle exec ruby :task"
 every :day do
-  command "cd :path && RAILS_ENV=:environment bundle exec ruby lib/clock_daemon.rb restart"
+  custom_ruby_exec "lib/clock_daemon.rb restart" 
 end
 
 # Learn more: http://github.com/javan/whenever
