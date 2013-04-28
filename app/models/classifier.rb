@@ -42,8 +42,8 @@ class Classifier < ActiveRecord::Base
     if features_vector.empty?
       p ["EXCEPTION", feed, klass]
       DevelopmentLogger.logger.error ["Empty feature vector in Classifier#train!!!", feed, klass, features_vector]
-      return nil
-      #raise Exception
+      #return nil
+      raise Exception
     end
 
     self.docs_counts = {:text_class_id => klass_id, :count => docs_counts(klass_id) + 1}
@@ -158,7 +158,6 @@ class Classifier < ActiveRecord::Base
   end
 
 
-  #TODO:HACK:FUCK: Now code is not clear and we get some ambiguity and code repeating in Classifier
   def get_features_vector feed
     return feed if Rails.env == "test" && feed.is_a?(String)
     return feed.string_for_classifier if Rails.env == "test" && feed.is_a?(Feed)
