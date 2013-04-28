@@ -1,11 +1,10 @@
 #coding: utf-8
 
 #TODO: Make logging for Svm. Add weight correction for SVM.
-# And here we needn't scaling, 'cause data already scaled into [0,1].
+#NOTE: And here we needn't scaling, 'cause data already scaled into [0,1].
 class Svm
 
   # TRUE_CLASS - for outlier data; FALSE_CLASS - for good data
-  # Because outlier data has text_class equal to nil
   TRUE_CLASS = 1
   FALSE_CLASS = -1
 
@@ -69,7 +68,6 @@ class Svm
   # params: +need_scaling+ - true if data needs scaled
   #         +need_optimizing+ - true if you need to run svm-grid to choice g and c
   #         +g, c+ - svm's gamma and cost
-  #NOTE: Something wrong with scaling part in code. TOO BAD SMeLLiNG
   def train_model( params={} )
     if params[:need_scaling]
       scale_train_and_test_files

@@ -3,7 +3,9 @@
 namespace :classifier do
   desc "Set text_class to nil and add uncorrect_data tag into Feeds"
   task :filter_uncorrect_data => :environment do
-    filter_uncorrect_data
+    #filter_uncorrect_data
+    # 1176 / 5594. But what will be after custom DIPRE? and what accuracy
+    filter_empty_features_vector_for_rose_mnb
   end
 
 
@@ -69,6 +71,17 @@ namespace :classifier do
   task :train_by_production_data => :environment do
     Scheduler::Classifier.train_by_production_data
   end
+
+
+  def filter_empty_features_vector_for_rose_mnb
+    train_feeds = Feed.tagged_with( Classifier::TRAIN_TAGS, :any => true )
+    empty_features_feeds = []
+    train_feeds.each do |feed|
+      empty_features_feeds << feed if feed.features_for_text_classifier.empty?
+    end
+    p "#{empty_features_feeds.count} / #{train_feeds.count}"
+  end
+
 
 
   def filter_uncorrect_data

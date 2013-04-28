@@ -8,7 +8,7 @@ namespace :application do
   end
 
 
-  desc "Fill vocabulary( previously need to create dict )"
+  desc "Fill vocabulary( previously dict needs  )"
   task :fill_vocabulary => :environment do
     filename = 'stem_vocabulary_hash'
     raise Exception unless File.exist?(filename)
