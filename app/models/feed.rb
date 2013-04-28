@@ -6,7 +6,7 @@ class Feed < ActiveRecord::Base
 
   acts_as_taggable_on :marks
 
-  has_many :classified_infos, :class_name => 'FeedClassifiedInfo'
+  has_many :classified_infos, :class_name => 'FeedClassifiedInfo', :dependent => :destroy
   has_many :classifiers, :through => :classified_infos
 
   validates :url, :uniqueness => true
@@ -52,14 +52,10 @@ class Feed < ActiveRecord::Base
   def features_for_text_classifier
     raw_feature_vectors = get_raw_feature_vectors( :for_text_classifier => true )
     fvs = city_and_named_features(raw_feature_vectors).flatten
-    fvs = fvs.collect{|e| WordProcessor.stem(e[:token], e[:quoted]) }     
-    # Vocabulary Entry with many OR conditioned where.
-    # Then Vocabulary Entry with regexp rules
-    # --- What do we do with domain ????     
-    ## ------ If regexp rule then it may works, it will return domain if token is nil. OK try with domain and without it.
-    ## ------ And at this case we need only string_for_classifier!
-    feature_vector = fvs.find_all{|word| word.length > 2 && VocabularyEntry.has?( word )}
-    feature_vector = feature_vector.to_a + VocabularyEntry.words_matches_rules( string_for_classifier ).to_a
+    fvs = fvs.collect{|e| WordProcessor.stem(e[:token], e[:quoted]) }
+    feature_vector = fvs.find_all{|word| word.length > 2 && VocabularyEntry.has?( word, :with_truly_regexp => true )}
+    feature_vector = feature_vector.to_a + VocabularyEntry.words_matches_rules( string_for_classifier )
+    return [] if feature_vector.count == 1
     feature_vector
   end
 
@@ -128,11 +124,8 @@ class Feed < ActiveRecord::Base
 
   def get_raw_feature_vectors options={}
     if text_class && !options[:for_text_classifier]#TODO: If text class - Для DIPRE, нужно продумать как передавать Regexp Для города чтобы извлекались Уфа, Ишимбай и т.п
-      rules = VocabularyEntry.accepted.rules.includes(:text_classes).
-          where('text_classes_vocabulary_entries.text_class_id != ? && text_classes_vocabulary_entries.text_class_id is NOT NULL', text_class.id)
-      other_cities_regexp = Hash[rules.map{|ve| [ve.text_classes.first.id, Regexp.new(ve.regexp_rule)]}]
-      city_lexer = CityLexer.new({ :text_class_id => text_class.id, :main_city_regexp => Regexp.new( Settings.bayes.regexp[text_class.name] ),
-                                   :other_classes => other_cities_regexp } )
+      city_lexer = CityLexer.new({ :text_class_id => text_class.id, :main_city_regexp => Regexp.new( VocabularyEntry.make_regexp_for_truly_entries(text_class_id)[0] ),
+                                   :other_classes => VocabularyEntry.make_regexp_for_truly_entries(text_class_id, :for_other_cities => true)[0] } )
       city_lexer.city_news_mode = options[:city_news_mode] || 1
     else
       city_lexer = CityLexer.new
