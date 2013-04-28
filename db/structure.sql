@@ -668,7 +668,8 @@ CREATE TABLE vocabulary_entries (
     regexp_rule character varying(255),
     state integer,
     created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    truly_city boolean
 );
 
 
@@ -1202,3 +1203,5 @@ INSERT INTO schema_migrations (version) VALUES ('20130422122127');
 INSERT INTO schema_migrations (version) VALUES ('20130423051244');
 
 INSERT INTO schema_migrations (version) VALUES ('20130426063801');
+
+INSERT INTO schema_migrations (version) VALUES ('20130428085308');
