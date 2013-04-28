@@ -16,16 +16,6 @@ class Scheduler::ProductionFeedsFetcher
   end
 
 
-  #NOTE: Bad feelings take me when I look at this function!
-  def production_satisfaction?(entry)
-    regexp = Regexp.new Settings.bayes.regexp.values.join("|")
-    str = entry.title + " " + entry.summary
-    not str.scan(regexp).empty?
-
-    @outlier_and_goods[:good].include?(entry)
-  end
-
-
   def get_outlier_and_goods(feeds)
     Svm.new.classify(feeds)
   end
