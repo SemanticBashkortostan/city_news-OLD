@@ -5,5 +5,5 @@ class FeedClassifiedInfo < ActiveRecord::Base
   belongs_to :classifier
   belongs_to :text_class
 
-  default_scope where('text_class_id is not NULL')
+  scope :with_text_class, where('feed_classified_infos.text_class_id is not NULL')
 end
