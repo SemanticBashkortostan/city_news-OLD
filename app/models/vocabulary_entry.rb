@@ -24,6 +24,7 @@ class VocabularyEntry < ActiveRecord::Base
   end
 
   scope :accepted, with_state( :accepted )
+  default_scope accepted
   #NOTE: If regexp_rule contains '\' like '\d' then need adding escape for '\' like '\\d'
   #NOTE: Standard rules can applied into any token, Truly rules applied only for one-word token
   scope :standard_rules, where('regexp_rule != ? and truly_city != ?', nil, true)
@@ -68,9 +69,9 @@ class VocabularyEntry < ActiveRecord::Base
   def self.make_regexp_for_truly_entries( text_class_id, options={} )
     big_regexp = ""
     return_token = nil
-    options[:for_other_cities] ? scope = VocabularyEntry.truely.for_cities_other_than(text_class_id) : scope = VocabularyEntry.truely.for_city(text_class_id)
+    options[:for_other_cities] ? scope = VocabularyEntry.truly.for_cities_other_than(text_class_id) : scope = VocabularyEntry.truly.for_city(text_class_id)
     scope.each do |word_or_rule|
-      return_token = word_or_rule.token
+      return_token = word_or_rule.token unless options[:for_other_cities]
       if word_or_rule.regexp_rule
         rule = word_or_rule.regexp_rule.delete("()")
       else
@@ -87,7 +88,7 @@ class VocabularyEntry < ActiveRecord::Base
 
 
   def truly_rule_validation
-    errors.add :token, "Should have value" if truly_city?
+    errors.add :token, "Should have value" if truly_city? && token.nil?
   end
 
 

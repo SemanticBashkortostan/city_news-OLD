@@ -36,12 +36,12 @@ class CityLexer
     @stop_words = @stop_words.to_set
 
     @city_news_mode = 0
-    @city_info = {:text_class_id => options[:text_class_id], :regexp => options[:main_city_regexp], :other_classes => options[:other_classes]}        
+    @city_info = {:text_class_id => options[:text_class_id], :main_class_regexp => options[:main_city_regexp], :other_classes_regexp => options[:other_classes_regexp]}
   end
 
 
   def city_news_mode=(val)
-    @city_news_mode = val    
+    @city_news_mode = val
   end
 
 
@@ -83,7 +83,7 @@ class CityLexer
         end
       else
         if quote_end # If not quoted token
-          if text[i] == @space_sym && not( text[i+1] =~ @big_letters )
+          if text[i] == @space_sym && !( text[i+1] =~ @big_letters )
             tokens_hash[token], token_num = get_token_with_token_num(token, token_num, comma, text, options)
             token = ""
             comma = false
@@ -140,6 +140,7 @@ class CityLexer
     end
   end
 
+
   def get_token_with_token_num(token, token_num, comma, text, tmp_options={})
     is_first_token = (token_num == 0)
 
@@ -170,17 +171,15 @@ class CityLexer
 
     hash.merge!(options) unless options.empty?  
 
-    # If we in city news mode and token is not 'comma' then add text class info into token's hash
-    if @city_news_mode == 1 && !comma
-      if !@city_info.empty? && token =~ @city_info[:regexp]
+    #NOTE: Now adding info about text class work for tokens which contains only 1 word
+    # If we in city news mode and token is not 'comma' and token is only 1 word then add text class info into token's hash
+    if @city_news_mode == 1 && !comma && token.split.count == 1
+      if !@city_info.empty? && token =~ @city_info[:main_class_regexp]
         hash.merge!( {:text_class_id => @city_info[:text_class_id], :is_main_class => true} ) 
       else
-        @city_info[:other_classes].each { |text_class_id, regexp|
-          if token =~ regexp
-            hash.merge!( {:text_class_id => text_class_id, :is_main_class => false } )
-            break
-          end
-        }
+        if token =~ Regexp.new(@city_info[:other_classes_regexp])
+          hash.merge!( {:text_class_id => @city_info[:text_class_id], :is_main_class => false } )
+        end
       end
     end
     return [hash, token_num+1]

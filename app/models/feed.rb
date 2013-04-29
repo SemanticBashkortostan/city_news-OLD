@@ -22,11 +22,6 @@ class Feed < ActiveRecord::Base
   before_save :set_default_published_at
 
 
-  def string_for_classifier
-    title.to_s + " " + summary.to_s + " " + "Domain: #{self.domain}"
-  end
-
-
   def self.fetched_trainers( cnt, text_classes, cl_id )
     trained_feed_ids = was_trainers(cl_id).collect{|train_feed| train_feed.id}
     scope = where("feeds.id not in (?)", trained_feed_ids).tagged_with(["fetched", "production", "classified", "to_train"])
@@ -40,15 +35,27 @@ class Feed < ActiveRecord::Base
   end
 
 
-  def feature_vectors_for_relation_extraction
-    return nil unless text_class
-    raw_feature_vectors = get_raw_feature_vectors   
-    city_features, named_features = city_and_named_features(raw_feature_vectors)
-    return nil unless city_features.present? && named_features.present?    
-    get_features_for_classifier( city_features, named_features )
+  def string_for_classifier
+    title.to_s + " . " + summary.to_s + " . " + "Domain: #{self.domain}"
   end
 
 
+  def domain
+    url.split("/")[2]
+  end
+
+
+  # Retrun all possible feature vectors for relation extraction
+  def feature_vectors_for_relation_extraction
+    return [] unless text_class
+    raw_feature_vectors = get_raw_feature_vectors   
+    city_features, named_features = city_and_named_features(raw_feature_vectors)
+    return [] unless city_features.present? && named_features.present?
+    get_feature_vectors_for_relation_extraction( city_features, named_features )
+  end
+
+
+  # Return feature vector for text classifier
   def features_for_text_classifier
     raw_feature_vectors = get_raw_feature_vectors( :for_text_classifier => true )
     fvs = city_and_named_features(raw_feature_vectors).flatten
@@ -57,11 +64,6 @@ class Feed < ActiveRecord::Base
     feature_vector = feature_vector.to_a + VocabularyEntry.words_matches_rules( string_for_classifier )
     return [] if feature_vector.count == 1
     feature_vector
-  end
-
-
-  def domain
-    url.split("/")[2]
   end
 
 
@@ -92,8 +94,8 @@ class Feed < ActiveRecord::Base
   end
 
 
-  def get_features_for_classifier city_features, named_features    
-    classifier_features = []
+  def get_feature_vectors_for_relation_extraction city_features, named_features
+    vectors = []
     has_other_cities = city_features.find{|e| e[:text_class_id] > 0 && e[:text_class_id] != text_class.id }.present?
     city_features.each do |city_hash|
       named_features.each do |named_hash|
@@ -103,29 +105,29 @@ class Feed < ActiveRecord::Base
         tc_same_as_feed = (city_hash[:text_class_id] == text_class.id)
 
         # *distance* needs to be discretized!
-        feature_hash = {           
+        feature_vector = {
                           :text_class_id => city_hash[:text_class_id], :tc_is_first_token => city_hash[:is_first_token], :tc_token => city_hash[:token],
                           :tc_right_context => city_hash[:right_context], :tc_left_context => city_hash[:left_context], :tc_quoted => city_hash[:quoted],
                           :tc_stem => WordProcessor.stem(city_hash[:token], city_hash[:quoted]),
 
                           :has_other_cities => has_other_cities, :in_one_sent => in_one_sent, :distance => distance, :tc_word_position => tc_word_position,
-                          :tc_same_as_feed => tc_same_as_feed,
+                          :tc_same_as_feed => tc_same_as_feed, :is_main_class => city_hash[:is_main_class],
 
                           :ne_is_first_token => named_hash[:is_first_token], :ne_token => named_hash[:token], :ne_right_context => named_hash[:right_context], 
                           :ne_left_context => named_hash[:left_context], :ne_quoted => named_hash[:quoted], 
                           :ne_stem => WordProcessor.stem( named_hash[:token], named_hash[:quoted] )
                        }
-        classifier_features << feature_hash
+        vectors << feature_vector
       end
     end
-    return classifier_features
+    return vectors
   end
 
 
   def get_raw_feature_vectors options={}
-    if text_class && !options[:for_text_classifier]#TODO: If text class - Для DIPRE, нужно продумать как передавать Regexp Для города чтобы извлекались Уфа, Ишимбай и т.п
+    if text_class && !options[:for_text_classifier]
       city_lexer = CityLexer.new({ :text_class_id => text_class.id, :main_city_regexp => Regexp.new( VocabularyEntry.make_regexp_for_truly_entries(text_class_id)[0] ),
-                                   :other_classes => VocabularyEntry.make_regexp_for_truly_entries(text_class_id, :for_other_cities => true)[0] } )
+                                   :other_classes_regexp => VocabularyEntry.make_regexp_for_truly_entries(text_class_id, :for_other_cities => true)[0] } )
       city_lexer.city_news_mode = options[:city_news_mode] || 1
     else
       city_lexer = CityLexer.new
