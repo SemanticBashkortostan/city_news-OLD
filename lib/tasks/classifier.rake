@@ -73,11 +73,14 @@ namespace :classifier do
   end
 
 
+  # "829 / 5594" - Filtered :testing => true
+  # "2085 / 5594" - default state
   def filter_empty_features_vector_for_rose_mnb
     train_feeds = Feed.tagged_with( Classifier::TRAIN_TAGS, :any => true )
     empty_features_feeds = []
-    train_feeds.each do |feed|
-      empty_features_feeds << feed if feed.features_for_text_classifier.empty?
+    train_feeds.each_with_index do |feed, ind|
+      puts "Processed #{ind}/#{train_feeds.count}. Empty: #{empty_features_feeds.count}"
+      empty_features_feeds << feed if feed.features_for_text_classifier().empty?
     end
     p "#{empty_features_feeds.count} / #{train_feeds.count}"
   end
