@@ -3,6 +3,7 @@ class VocabularyEntry < ActiveRecord::Base
   # Regexp rule may have mapping to token
   attr_accessible :regexp_rule, :state, :token
 
+  cattr_accessor :testing_mode
 
   ACCEPTED_STATE = 10
   DECLINED_STATE = 20
@@ -11,6 +12,7 @@ class VocabularyEntry < ActiveRecord::Base
 
 
   validate :truly_rule_validation
+  validate :token_uniqueness
 
 
   has_and_belongs_to_many :text_classes
@@ -24,28 +26,37 @@ class VocabularyEntry < ActiveRecord::Base
   end
 
   scope :accepted, with_state( :accepted )
-  default_scope accepted
+
+  def self.default_scope
+    (VocabularyEntry.testing_mode == 1) ? with_state(:accepted, :testing) : with_state(:accepted)
+  end
+
   #NOTE: If regexp_rule contains '\' like '\d' then need adding escape for '\' like '\\d'
   #NOTE: Standard rules can applied into any token, Truly rules applied only for one-word token
-  scope :standard_rules, where('regexp_rule != ? and truly_city != ?', nil, true)
+  scope :standard_rules, where('regexp_rule is not ? and (truly_city != ?)', nil, true)
   #NOTE: Each truly rule for one text class should map in 1 token and truly rule has only 1 text_class
   scope :truly, where('truly_city = ?', true)
   scope :for_city, lambda{ |tc_id| includes(:text_classes).where(:text_classes => { :id =>  tc_id} ) }
   scope :for_cities_other_than, lambda{ |tc_id| includes(:text_classes).where( 'text_classes_vocabulary_entries.text_class_id != ?', tc_id ) }
+  scope :only_tokens, where('regexp_rule is ? AND token is not ?', nil, nil)
 
 
 
   def self.has?( string, options={} )
-    scope = VocabularyEntry.accepted
-  	found = scope.find_by_token( string )
-    found ||= VocabularyEntry.try_truly_rules(string) if options[:with_truly_regexp] && string.split.count == 1
+    VocabularyEntry.find_by_token( string )
+  end
+
+
+  def self.is_truly? string
+    found = VocabularyEntry.try_truly_rules(string) if string.split.count == 1
     return found
   end
 
 
-  def self.words_matches_rules(string)
+  def self.words_matches_rules(string, options={})
     rule_features = []
-    VocabularyEntry.accepted.standard_rules.each do |rule|
+    scope = VocabularyEntry
+    scope.standard_rules.each do |rule|
       if string =~ Regexp.new(rule.regexp_rule)
         ret_val = rule.token
         ret_val ||= string.scan(Regexp.new(rule.regexp_rule)).first
@@ -61,6 +72,7 @@ class VocabularyEntry < ActiveRecord::Base
       truly_regexp = VocabularyEntry.make_regexp_for_truly_entries( tc.id )
       return truly_regexp[1] if word =~ Regexp.new(truly_regexp[0])
     end
+    return nil
   end
 
 
@@ -89,6 +101,11 @@ class VocabularyEntry < ActiveRecord::Base
 
   def truly_rule_validation
     errors.add :token, "Should have value" if truly_city? && token.nil?
+  end
+
+
+  def token_uniqueness
+    errors.add :token, "Should be unique" if VocabularyEntry.only_tokens.pluck(:token).include?(token)
   end
 
 
