@@ -1,5 +1,8 @@
 #coding: utf-8
 class Feed < ActiveRecord::Base
+
+  TRULY_MULTIPLIER = 3
+
   attr_accessible :published_at, :summary, :text_class_id, :title, :url, :text_class, :mark_list
 
   belongs_to :text_class
@@ -46,23 +49,29 @@ class Feed < ActiveRecord::Base
 
 
   # Retrun all possible feature vectors for relation extraction
-  def feature_vectors_for_relation_extraction
+  def feature_vectors_for_relation_extraction( options={} )
     return [] unless text_class
     raw_feature_vectors = get_raw_feature_vectors   
     city_features, named_features = city_and_named_features(raw_feature_vectors)
-    return [] unless city_features.present? && named_features.present?
+    return [] unless city_features.present? && named_features.present? && options[:debug]
     get_feature_vectors_for_relation_extraction( city_features, named_features )
   end
 
 
   # Return feature vector for text classifier
-  def features_for_text_classifier
+  def features_for_text_classifier(options={})
     raw_feature_vectors = get_raw_feature_vectors( :for_text_classifier => true )
     fvs = city_and_named_features(raw_feature_vectors).flatten
     fvs = fvs.collect{|e| WordProcessor.stem(e[:token], e[:quoted]) }
-    feature_vector = fvs.find_all{|word| word.length > 2 && VocabularyEntry.has?( word, :with_truly_regexp => true )}
-    feature_vector = feature_vector.to_a + VocabularyEntry.words_matches_rules( string_for_classifier )
-    return [] if feature_vector.count == 1
+    filtered_fvs = []
+    fvs.each do |word|
+      if word.length > 2
+        filtered_fvs << word if VocabularyEntry.has?( word )
+        filtered_fvs += [ VocabularyEntry.is_truly?(word) ]*TRULY_MULTIPLIER  if VocabularyEntry.is_truly?(word)
+      end
+    end
+    feature_vector = filtered_fvs + VocabularyEntry.words_matches_rules( string_for_classifier )
+    return [] if feature_vector.count == 1 && !options[:debug]
     feature_vector
   end
 
@@ -72,6 +81,7 @@ class Feed < ActiveRecord::Base
 
 
 
+  #NOTE: Feature is city if he has text_class_id. text_class_id only set for the token which satisfy to city_regexp
   def city_and_named_features(raw_feature_vectors)
     city_features = []
     named_features = []
@@ -127,7 +137,7 @@ class Feed < ActiveRecord::Base
   def get_raw_feature_vectors options={}
     if text_class && !options[:for_text_classifier]
       city_lexer = CityLexer.new({ :text_class_id => text_class.id, :main_city_regexp => Regexp.new( VocabularyEntry.make_regexp_for_truly_entries(text_class_id)[0] ),
-                                   :other_classes_regexp => VocabularyEntry.make_regexp_for_truly_entries(text_class_id, :for_other_cities => true)[0] } )
+                                   :other_classes_regexp => Regexp.new(VocabularyEntry.make_regexp_for_truly_entries(text_class_id, :for_other_cities => true)[0]) } )
       city_lexer.city_news_mode = options[:city_news_mode] || 1
     else
       city_lexer = CityLexer.new
