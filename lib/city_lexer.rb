@@ -173,12 +173,14 @@ class CityLexer
 
     #NOTE: Now adding info about text class work for tokens which contains only 1 word
     # If we in city news mode and token is not 'comma' and token is only 1 word then add text class info into token's hash
+    # text_class_id sets only for token which satisfy for main_city_regexp
     if @city_news_mode == 1 && !comma && token.split.count == 1
-      if !@city_info.empty? && token =~ @city_info[:main_class_regexp]
+      if !@city_info.empty? && (token =~ @city_info[:main_class_regexp])
         hash.merge!( {:text_class_id => @city_info[:text_class_id], :is_main_class => true} ) 
       else
-        if token =~ Regexp.new(@city_info[:other_classes_regexp])
-          hash.merge!( {:text_class_id => @city_info[:text_class_id], :is_main_class => false } )
+        # In the future may need setting text_class_id for other_classes_regexp( each regexp in other_classes responds_to text_class)
+        if token =~ @city_info[:other_classes_regexp]
+          hash.merge!( {:is_main_class => false } )
         end
       end
     end
