@@ -10,7 +10,7 @@ class Svm
 
 
   # +filename_prefix+ -examples:( folder1/filename or filename or folder1/folder2/filename )
-  def initialize(filename_prefix = "outlier_classifier/outlier_city_svm", params={})
+  def initialize(filename_prefix = "outlier_classifier-new/outlier_city_svm", params={})
     @max_test_data_count = 1000
     @file_path = "#{Rails.root}/"
 
@@ -150,7 +150,7 @@ class Svm
     return vectors
   end
 
-
+  # 32, 0.5
   def make_libsvm_train_and_test_files( train_vectors, test_vectors )
     write_to_libsvm_file(train_vectors, @train_filename)
     write_to_libsvm_file(test_vectors, @test_filename)
@@ -188,7 +188,7 @@ class Svm
 
 
   def make_vocabulary
-    @vocabulary = VocabularyEntry.accepted.pluck(:token).uniq.compact
+    @vocabulary = VocabularyEntry.pluck(:token).uniq.compact
   end
 
 
@@ -211,3 +211,8 @@ class Svm
 
 
 end
+
+
+# Default 30 04 13: Accuracy = 90.2985% (847/938) (classification)
+#  {1=>{1=>266, -1=>2}, -1=>{1=>89, -1=>581}}
+
