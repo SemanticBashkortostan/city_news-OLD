@@ -5,7 +5,8 @@ module FeatureFetcher
   class RelationExtractor
 
 
-    def initialize( dict_type )
+    CachedFeed = Struct.new( :id, :feature_vectors_for_relation_extraction )
+    def initialize( dict_type=:stem )
       @osm_arr = {                   
                   TextClass.find_by_name("Стерлитамак").id => ["sterlitamak.osm", FeatureFetcher::Osm::STERLITAMAK_BOUNDING_BOX], 
                   TextClass.find_by_name("Салават").id => ["salavat.osm", FeatureFetcher::Osm::SALAVAT_BOUNDING_BOX],
@@ -16,7 +17,7 @@ module FeatureFetcher
       @text_class_ids = @osm_arr.keys
 
       @dict_type = dict_type
-      @dict_filename = "#{@dict_type}_vocabulary_hash"      
+      @dict_filename = "#{@dict_type}_vocabulary_hash"
     end
 
 
@@ -35,13 +36,31 @@ module FeatureFetcher
     end
 
 
-    # #КОСТЫЛЬ detected
+    def generate_dict_from_vocabulary_entry
+      dict = {}
+      @text_class_ids.each do |id|
+        dict[id] = VocabularyEntry.accepted.for_city(id).collect(&:token).to_set
+      end
+      return dict
+    end
+
+    def generate_truly_rules_from_vocabulary_entry
+      truly_rules = {}
+      @text_class_ids.each do |id|
+        truly_rules[id] = Regexp.new(VocabularyEntry.make_regexp_for_truly_entries(id)[0])
+      end
+      return truly_rules
+    end
+
+
+    # Write [feature_vector, feed.id] into sets
     def form_training_set
       # includes :text_classes and maybe regexp into raw_feature_vector in Feed
-      grouped_by_city_training_set = {}
+      positive_training_set = []
       negative_training_set = []
       text_classes = TextClass.where :id => @text_class_ids      
-      dict = get_dict
+      dict = generate_dict_from_vocabulary_entry
+      truly_rules = generate_truly_rules_from_vocabulary_entry
       feeds = Feed.includes(:text_class).where(:text_class_id => @text_class_ids).all
 
       feeds.each_with_index do |feed, ind|
@@ -50,28 +69,62 @@ module FeatureFetcher
         next unless feed_feature_vectors 
         feed_feature_vectors.each { |fv|
           text_classes.each do |tc|            
-            if fv[:tc_token] =~ Regexp.new( Settings.bayes.regexp[tc.name] ) 
-              city_dictionary = dict[tc.id]          
-              #КОСТЫЛЬ: Change :ne_lemma to required field    
+            if fv[:tc_stem] =~ truly_rules[tc.id] && fv[:tc_stem] != fv[:ne_stem] && fv[:ne_stem].length > 1
+              city_dictionary = dict[tc.id]
               if city_dictionary.include?( fv[:ne_stem] )
-                p "Good! #{fv} #{fv[:ne_stem]}"
-                grouped_by_city_training_set[tc.id] ||= []
-                grouped_by_city_training_set[tc.id] << fv
+                positive_training_set << [fv, feed.id]
                 break
               else
-                negative_training_set << fv
+                negative_training_set << [fv, feed.id]
                 break
               end
-
             end
           end 
         }             
       end
 
-      positive_filename = "positive_re_set"      
-      negative_filename = "negative_re_set"
-      save_hash(positive_filename, grouped_by_city_training_set)
+      positive_filename = "positive_re_set-new"
+      negative_filename = "negative_re_set-new"
+      save_hash(positive_filename, positive_training_set)
       save_hash(negative_filename, negative_training_set)        
+    end
+
+
+    def preload_feeds_data
+      if !@feeds
+        feeds = Feed.includes(:text_class).where(:text_class_id => @text_class_ids).all
+        @feeds = []
+        feeds.each do |feed|
+          @feeds << CachedFeed.new(feed.id, feed.feature_vectors_for_relation_extraction)
+        end
+      end
+      return @feeds
+    end
+
+
+    def extract_vectors_for_relation_extractor(dict = nil)
+      set = []
+      dict ||= generate_dict_from_vocabulary_entry
+      truly_rules = generate_truly_rules_from_vocabulary_entry
+      feeds = @feeds
+      feeds.each_with_index do |feed, ind|
+        p "proccesed #{feed.id} :: #{ind}/#{feeds.count}"
+        feed_feature_vectors = feed.feature_vectors_for_relation_extraction
+        next unless feed_feature_vectors
+        feed_feature_vectors.each { |fv|
+          @text_class_ids.each do |tc_id|
+           if fv[:tc_stem] =~ truly_rules[tc_id] && fv[:tc_stem] != fv[:ne_stem] && fv[:ne_stem].length > 1
+             city_dictionary = dict[tc_id]
+             if city_dictionary.include?( fv[:ne_stem] )
+               set << [fv, feed.id]
+               break
+             end
+           end
+         end
+        }
+      end
+      return set
+
     end
 
 
