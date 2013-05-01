@@ -1,7 +1,7 @@
 #coding: utf-8
 class Feed < ActiveRecord::Base
 
-  TRULY_MULTIPLIER = 3
+  TRULY_MULTIPLIER = 1
 
   attr_accessible :published_at, :summary, :text_class_id, :title, :url, :text_class, :mark_list
 
