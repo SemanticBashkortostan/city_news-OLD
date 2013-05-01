@@ -1,6 +1,8 @@
 #coding: utf-8
 class Feed < ActiveRecord::Base
 
+  # This constant used to make truly cities tokens more strength in features_for_classifier
+  # IF it equal to 1 then it doesn't make sense
   TRULY_MULTIPLIER = 1
 
   attr_accessible :published_at, :summary, :text_class_id, :title, :url, :text_class, :mark_list
