@@ -17,7 +17,7 @@ class Scheduler::ProductionFeedsFetcher
 
 
   def get_outlier_and_goods(feeds)
-    Svm.new.classify(feeds)
+    Svm.new.classify(feeds, :need_scaling => false)
   end
 
 
