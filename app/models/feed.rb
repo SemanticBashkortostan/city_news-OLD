@@ -40,6 +40,29 @@ class Feed < ActiveRecord::Base
   end
 
 
+  CachedFeed = Struct.new( :id, :feature_vectors_for_relation_extraction, :features_for_text_classifier, :mark_list, :text_class )
+  # Get cached feeds or create them if they not exists
+  # options - +:filename+ -cached filename, default is 'default_feeds_cache' and saved into tmp/cache;
+  #@param     +:feeds:+ - feeds which will save into cache; default is all Feeds with text classes
+  #@param     +:recreate+ - if true then cache will be recreate
+  def self.cached( options={} )
+    options[:filename] ||= "default_feeds_cache"
+    options[:need_re] ||= true
+    filename = "tmp/cache/#{options[:filename]}"
+    return FileMarshaling::marshal_load(filename) if File.exist?( filename ) && !options[:recreate]
+
+    feeds = Set.new
+    to_cache_feeds = options[:feeds]
+    to_cache_feeds ||= Feed.includes(:text_class, :marks).where(:text_class_id => TextClass.all).all
+    to_cache_feeds.each do |feed|
+      for_relation_extraction = feed.feature_vectors_for_relation_extraction if options[:need_re]
+      feeds << CachedFeed.new( feed.id, for_relation_extraction, feed.features_for_text_classifier,
+                     feed.mark_list, feed.text_class )
+    end
+    FileMarshaling::marshal_save(filename, feeds)
+  end
+
+
   def string_for_classifier
     title.to_s + " . " + summary.to_s + " . " + "Domain: #{self.domain}"
   end
@@ -51,11 +74,11 @@ class Feed < ActiveRecord::Base
 
 
   # Retrun all possible feature vectors for relation extraction
-  def feature_vectors_for_relation_extraction( options={} )
+  def feature_vectors_for_relation_extraction()
     return [] unless text_class
     raw_feature_vectors = get_raw_feature_vectors   
     city_features, named_features = city_and_named_features(raw_feature_vectors)
-    return [] unless city_features.present? && named_features.present? && options[:debug]
+    return [] unless city_features.present? && named_features.present?
     get_feature_vectors_for_relation_extraction( city_features, named_features )
   end
 
