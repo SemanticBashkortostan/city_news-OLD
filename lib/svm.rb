@@ -3,6 +3,7 @@
 #TODO: Make logging for Svm. Add weight correction for SVM.
 #NOTE: And here we needn't scaling, 'cause data already scaled into [0,1].
 class Svm
+  include FeedsHelper
 
   # TRUE_CLASS - for outlier data; FALSE_CLASS - for good data
   TRUE_CLASS = 1
@@ -32,8 +33,10 @@ class Svm
 
 
   # Return hash like { :outlier => [...], :good => [...] }
-  def classify(feeds, need_scaling=true)
-    to_classify_vectors = get_svm_vectors_from(feeds)
+  def classify(start_feeds, params={})
+    need_scaling = params[:need_scaling] || true
+
+    to_classify_vectors, feeds = get_svm_vectors_from(start_feeds, nil, nil, :with_filtered_feeds => true)
     write_to_libsvm_file(to_classify_vectors, @classify_filename)
 
     if need_scaling
@@ -81,8 +84,9 @@ class Svm
     train_options = ""
     train_options += " -g #{params[:g]}" if params[:g]
     train_options += " -c #{params[:c]}" if params[:c]
+    train_options += "  #{params[:additional_options]} " if params[:additional_options]
 
-    system("svm-train #{train_options} #{train_filename} #{params[:additional_options]} #{@classifier_model_filename}")
+    system("svm-train #{train_options} #{train_filename} #{@classifier_model_filename}")
   end
 
 
@@ -125,44 +129,15 @@ class Svm
   end
 
 
-  def get_train_and_test_feeds type, from_cache=nil
-    from_cache ||= @from_cache
-    if from_cache
-      case type
-        when :city
-          feeds = Feed.cached
-          [
-              feeds.find_all{|feed| feed.mark_list.include?("dev_train") || feed.mark_list.include?("to_train") || feed.mark_list.include?("was_trainer") },
-              feeds.find_all{|feed| feed.mark_list.include?("dev_test") || (feed.mark_list - ["fetched", "production", "classified"]).empty? }
-          ]
-        when :outlier
-          Feed.cached(:filename => 'outlier_cached').to_a.shuffle
-      end
-    else
-      case type
-        when :city
-          [
-              Feed.tagged_with(["dev_train", "to_train", "was_trainer"], :any => true).where( :text_class_id => TextClass.all ),
-              Feed.tagged_with(["dev_test"], :any => true).where( :text_class_id => TextClass.all ) +
-                  Feed.tagged_with(["fetched", "production", "classified"], :match_all => true).where( :text_class_id => TextClass.all )
-          ]
-        when :outlier
-          Feed.tagged_with("outlier").all.shuffle
-      end
-    end
-
-  end
-
-
-
   protected
 
 
   #NOTE: Т.е тут мы получаем вектор признаков к которому уже применили regexp_rule из VocabularyEntry. И как же тогда формировать вектор признаков??? А у нас всё равно регескпы мапятса в токены)
   # А хотя там домен всё равно не участвовал, т.к у него token - nil!
-  def get_svm_vectors_from( data, vector_length=nil, klass_id=nil )
+  def get_svm_vectors_from( data, vector_length=nil, klass_id=nil, options={} )
     vector_length ||= @vocabulary.count
     vectors = []
+    filtered_feeds = []
     data.each do |feed|
       vector = Array.new vector_length, 0
       feature_vector = feed.features_for_text_classifier
@@ -175,9 +150,13 @@ class Svm
             vector_include_one = true
           end
         end
-        vectors << [(klass_id == feed.text_class.try(:id) ? TRUE_CLASS : FALSE_CLASS), vector] if vector.present? && vector_include_one
+        if vector.present? && vector_include_one
+          filtered_feeds << feed
+          vectors << [(klass_id == feed.text_class.try(:id) ? TRUE_CLASS : FALSE_CLASS), vector]
+        end
       end
     end
+    return [vectors, filtered_feeds] if options[:with_filtered_feeds]
     return vectors
   end
 
@@ -190,14 +169,14 @@ class Svm
 
   def make_libsvm_train_and_test_vectors
     @test_info << "SVM for input data filtering.\n Filename is #{@filename} \n\n\n "
-    cities_train_data, cities_test_data = get_train_and_test_feeds(:city)
+    cities_train_data, cities_test_data = get_train_and_test_feeds(:city, @from_cache)
 
     test_data_count = cities_test_data.count
     test_data_count = @max_test_data_count if test_data_count > @max_test_data_count
 
     cities_test_data = cities_test_data.shuffle[0...test_data_count]
 
-    outlier_data = get_train_and_test_feeds( :outlier )
+    outlier_data = get_train_and_test_feeds( :outlier, @from_cache)
     outlier_test_data = outlier_data[0...test_data_count]
     outlier_train_data = outlier_data[test_data_count...outlier_data.count]
 
@@ -248,3 +227,15 @@ end
 # With additional vocabulary entry
 #irb(main):082:0> svm.performance false
 #=> {1=>{1=>615, -1=>1}, -1=>{1=>38, -1=>948}}
+
+# With weighting
+#=> {1=>{1=>616, -1=>0}, -1=>{1=>40, -1=>946}}
+
+# ROSE-MNB
+#"City: 5589, 1000; Outlier: 34626, 1000"
+#[12771, 348]
+#{-1=>{-1=>979, 1=>8}, 1=>{1=>659, -1=>6}}
+#0.9915254237288136
+#=> 0.9915254237288136
+
+
