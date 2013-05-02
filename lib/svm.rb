@@ -16,6 +16,8 @@ class Svm
 
     @filename =  "#{@file_path}#{filename_prefix}-"
 
+    @from_cache = params[:from_cache]
+
     path = @filename.split("/")[0...-1].join("/")
     FileUtils.mkdir_p(path) unless File.exists?(path)
 
@@ -85,7 +87,7 @@ class Svm
 
 
   def test_model(scaled_filenames = true)
-    test_filename = "#{@test_filename}.scale" if scaled_filenames
+    scaled_filenames ? test_filename = "#{@test_filename}.scale" : test_filename = "#{@test_filename}"
     system("svm-predict #{test_filename} #{@classifier_model_filename} #{test_filename}-predicted")
   end
 
@@ -123,6 +125,35 @@ class Svm
   end
 
 
+  def get_train_and_test_feeds type, from_cache=nil
+    from_cache ||= @from_cache
+    if from_cache
+      case type
+        when :city
+          feeds = Feed.cached
+          [
+              feeds.find_all{|feed| feed.mark_list.include?("dev_train") || feed.mark_list.include?("to_train") || feed.mark_list.include?("was_trainer") },
+              feeds.find_all{|feed| feed.mark_list.include?("dev_test") || (feed.mark_list - ["fetched", "production", "classified"]).empty? }
+          ]
+        when :outlier
+          Feed.cached(:filename => 'outlier_cached').to_a.shuffle
+      end
+    else
+      case type
+        when :city
+          [
+              Feed.tagged_with(["dev_train", "to_train", "was_trainer"], :any => true).where( :text_class_id => TextClass.all ),
+              Feed.tagged_with(["dev_test"], :any => true).where( :text_class_id => TextClass.all ) +
+                  Feed.tagged_with(["fetched", "production", "classified"], :match_all => true).where( :text_class_id => TextClass.all )
+          ]
+        when :outlier
+          Feed.tagged_with("outlier").all.shuffle
+      end
+    end
+
+  end
+
+
 
   protected
 
@@ -144,7 +175,7 @@ class Svm
             vector_include_one = true
           end
         end
-        vectors << [(klass_id == feed.text_class_id ? TRUE_CLASS : FALSE_CLASS), vector] if vector.present? && vector_include_one
+        vectors << [(klass_id == feed.text_class.try(:id) ? TRUE_CLASS : FALSE_CLASS), vector] if vector.present? && vector_include_one
       end
     end
     return vectors
@@ -159,16 +190,14 @@ class Svm
 
   def make_libsvm_train_and_test_vectors
     @test_info << "SVM for input data filtering.\n Filename is #{@filename} \n\n\n "
-    cities_train_data = Feed.tagged_with(["dev_train", "to_train", "was_trainer"], :any => true).where( :text_class_id => TextClass.all )
-    cities_test_data  = Feed.tagged_with(["dev_test"], :any => true).where( :text_class_id => TextClass.all ) +
-        Feed.tagged_with(["fetched", "production", "classified"], :match_all => true).where( :text_class_id => TextClass.all )
+    cities_train_data, cities_test_data = get_train_and_test_feeds(:city)
 
     test_data_count = cities_test_data.count
     test_data_count = @max_test_data_count if test_data_count > @max_test_data_count
 
     cities_test_data = cities_test_data.shuffle[0...test_data_count]
 
-    outlier_data = Feed.tagged_with("outlier").all.shuffle
+    outlier_data = get_train_and_test_feeds( :outlier )
     outlier_test_data = outlier_data[0...test_data_count]
     outlier_train_data = outlier_data[test_data_count...outlier_data.count]
 
@@ -216,3 +245,6 @@ end
 # Default 30 04 13: Accuracy = 90.2985% (847/938) (classification)
 #  {1=>{1=>266, -1=>2}, -1=>{1=>89, -1=>581}}
 
+# With additional vocabulary entry
+#irb(main):082:0> svm.performance false
+#=> {1=>{1=>615, -1=>1}, -1=>{1=>38, -1=>948}}
