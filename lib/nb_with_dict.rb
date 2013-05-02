@@ -4,7 +4,7 @@ class NbWithDict
 
   include Statistic
   def initialize
-    make_vocabulary
+    #make_vocabulary
   end
 
 
@@ -16,7 +16,91 @@ class NbWithDict
   end
 
 
-  def run    
+  def run
+    svm = Svm.new "outlier_classifier-new/outlier_city_svm", :from_cache => true
+    @max_test_data_count = 1000
+
+    cities_train_data, cities_test_data = svm.get_train_and_test_feeds(:city)
+    cities_train_data = cities_train_data.find_all{|e| e.features_for_text_classifier.present?}
+
+    test_data_count = cities_test_data.count
+    test_data_count = @max_test_data_count if test_data_count > @max_test_data_count
+
+    cities_test_data = cities_test_data.shuffle[0...test_data_count]
+
+    outlier_data = svm.get_train_and_test_feeds( :outlier )
+    outlier_test_data = outlier_data[0...test_data_count]
+    outlier_train_data = outlier_data[test_data_count...outlier_data.count].find_all{|e| e.features_for_text_classifier.present?}
+
+    @nb = NaiveBayes::NaiveBayes.new 1.0, :rose, {:rose => {:duplicate_count => (outlier_train_data.count - cities_train_data.count).abs, :duplicate_klass => -1} }
+    train_data = outlier_train_data + cities_train_data
+    empty_feeds = {:train => [], :test => []}
+
+    train_data.each_with_index do |feed, i|
+      puts "Training #{i}/#{train_data.count}"
+      features = feed.features_for_text_classifier
+      if features.empty?
+        empty_feeds[:train] << feed
+      else
+        klass = get_klass(feed.text_class.try(:id))
+        @nb.train( features, klass )
+      end
+    end
+
+    #confusion_matrix, uncorrects = test_nb(cities_test_data, empty_feeds, outlier_test_data)
+    feeds = Feed.where('created_at > ?', 1.hour.ago).all
+    feeds.each_with_index do |feed, i|
+      puts "Processed #{i}/#{feeds.count}"
+      features = feed.features_for_text_classifier
+      if features.blank?
+        empty_feeds[:test] << feed
+      else
+        classified = @nb.classify( features )[:class]
+        if classified == 1
+          feed.mark_list << "nb_outlier"
+          feed.save!
+        end
+      end
+
+    end
+
+    #p "City: #{cities_train_data.count}, #{cities_test_data.count}; Outlier: #{outlier_train_data.count}, #{outlier_test_data.count}"
+    #p [empty_feeds[:train].count, empty_feeds[:test].count]
+    ##p confusion_matrix
+    ##p accuracy(confusion_matrix)
+    #return uncorrects
+  end
+
+
+  def test_nb(cities_test_data, empty_feeds, outlier_test_data)
+    confusion_matrix = {}
+    uncorrects = []
+    test_data = cities_test_data + outlier_test_data
+    test_data.each_with_index do |feed, i|
+      puts "Testing #{i}/#{test_data.count}"
+      features = feed.features_for_text_classifier
+      if features.empty?
+        empty_feeds[:test] << feed
+      else
+        classified = @nb.classify(features)[:class]
+        klass = get_klass(feed.text_class.try(:id))
+        confusion_matrix[klass] ||= {}
+        confusion_matrix[klass][classified] = confusion_matrix[klass][classified].to_i + 1
+        if classified != klass
+          uncorrects << [classified, klass, feed]
+        end
+      end
+    end
+    return confusion_matrix, uncorrects
+  end
+
+
+  def get_klass( text_class_id )
+    text_class_id.nil? ? klass = 1 : klass = -1
+  end
+
+
+  def run_tmp
     ish_tc = TextClass.find_by_name "Стерлитамак"
     ufa_tcs = TextClass.where :name => ["Уфа", "Нефтекамск", "Ишимбай", "Салават"]
     text_classes = TextClass.where :id => [ish_tc] + ufa_tcs
