@@ -1,11 +1,23 @@
 module FileMarshaling
-  def save_hash filename, vocabulary
+  def marshal_save filename, vocabulary
     File.open(filename, 'wb') do |f|
       f.write Marshal.dump(vocabulary)
     end
   end
 
-  def load_hash filename
+  def marshal_load filename
+    Marshal.load(File.binread(filename))
+  end
+
+
+  def self.marshal_save filename, vocabulary
+    File.open(filename, 'wb') do |f|
+      f.write Marshal.dump(vocabulary)
+    end
+  end
+
+
+  def self.marshal_load filename
     Marshal.load(File.binread(filename))
   end
 end

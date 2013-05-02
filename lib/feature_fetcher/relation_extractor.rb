@@ -5,6 +5,7 @@ module FeatureFetcher
   class RelationExtractor
 
 
+    include FileMarshaling
     CachedFeed = Struct.new( :id, :feature_vectors_for_relation_extraction )
     def initialize( dict_type=:stem )
       @osm_arr = {                   
@@ -24,7 +25,7 @@ module FeatureFetcher
     # Return dict like { :text_class_id => Set(word1, word2) }
     def get_dict    
       if File.exist?( @dict_filename ) 
-        return load_hash(@dict_filename) 
+        return marshal_load(@dict_filename) 
       else
         case @dict_type
         when :lemma then get_lemma_dicts
@@ -85,8 +86,8 @@ module FeatureFetcher
 
       positive_filename = "positive_re_set-new"
       negative_filename = "negative_re_set-new"
-      save_hash(positive_filename, positive_training_set)
-      save_hash(negative_filename, negative_training_set)        
+      marshal_save(positive_filename, positive_training_set)
+      marshal_save(negative_filename, negative_training_set)        
     end
 
 
@@ -132,7 +133,7 @@ module FeatureFetcher
       big_vocabulary = Set.new
 
       filename = "positive_re_set"
-      positive_re_hash = load_hash filename      
+      positive_re_hash = marshal_load filename      
       positive_re_hash.each do |k, v|
         p v.count  
         v.each do |vector|
@@ -143,12 +144,12 @@ module FeatureFetcher
       
       big_vocabulary += get_dict.values.to_set.flatten
       p big_vocabulary.count
-      save_hash( "big_vocabulary", big_vocabulary )
+      marshal_save( "big_vocabulary", big_vocabulary )
     end
 
 
     def big_vocabulary
-      load_hash("big_vocabulary")      
+      marshal_load("big_vocabulary")      
     end
 
 
@@ -161,7 +162,7 @@ module FeatureFetcher
         vocabulary[klass_id] = dict
         p dict.count
       end
-      save_hash( @dict_filename, vocabulary )
+      marshal_save( @dict_filename, vocabulary )
       return vocabulary
     end
 
@@ -174,21 +175,12 @@ module FeatureFetcher
         dict = Dict.new.lemma_dict osm_feature_fetcher.get_features
         vocabulary[klass_id] = dict
       end
-      save_hash( @dict_filename, vocabulary )
+      marshal_save( @dict_filename, vocabulary )
       return vocabulary
     end
 
 
-    def load_hash filename
-      Marshal.load( File.binread(filename) ) 
-    end
 
-
-    def save_hash filename, vocabulary
-      File.open(filename,'wb') do |f|
-        f.write Marshal.dump(vocabulary)
-      end
-    end
 
 
   end
