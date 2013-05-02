@@ -168,16 +168,21 @@ class Feed < ActiveRecord::Base
       city_lexer = CityLexer.new
     end
 
-    sentence_split_regexp = /[.!?]/
-    text = title.to_s + "." + summary.to_s
-            
     feature_vectors = []
-    text.split(sentence_split_regexp).each_with_index do |sentence, ind|
+    sentences = split_text_to_sentences(title.to_s + " . " + summary.to_s)
+    sentences.each_with_index do |sentence, ind|
       sentence.gsub!(/(&laquo;)|(&raquo;)|(&quot;)/, '"')      
       sentence.gsub!(/[()]/, " ")      
       feature_vectors << city_lexer.get_tokens_hash( sentence, :sent_ind => ind ).values
     end
     return feature_vectors.flatten
+  end
+
+
+  #NOTE: Make text splitting more intellectualy. 'cause this naive case not work for human names, streets, etc.
+  def split_text_to_sentences text
+    sentence_split_regexp = /[.!?]/
+    text.split(sentence_split_regexp)
   end
 
 
