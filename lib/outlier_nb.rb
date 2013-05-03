@@ -4,7 +4,7 @@ class OutlierNb
   CITY = -1
   OUTLIER = 1
 
-  def initialize filename="outlier-rose-nb"
+  def initialize filename="classifiers/outlier-rose-nb"
     @max_test_data_count = 1000
 
     @filename =  "#{Rails.root}/#{filename}"
@@ -14,13 +14,9 @@ class OutlierNb
 
 
   def make_classifier
-    max_test_data_count = 1000
-
+    test_data_count = @max_test_data_count
     cities_train_data, cities_test_data = FeedsHelper.get_train_and_test_feeds(:city, true)
     cities_train_data = cities_train_data.find_all{|e| e.features_for_text_classifier.present?}
-
-    test_data_count = cities_test_data.count
-    test_data_count = max_test_data_count if test_data_count > max_test_data_count
 
     cities_test_data = cities_test_data.shuffle[0...test_data_count]
 
@@ -72,4 +68,32 @@ class OutlierNb
     end
     return classified_hash
   end
+
+
+  def performance
+    max_test_data_count = @max_test_data_count
+    _, cities_test_data = FeedsHelper.get_train_and_test_feeds( :city, true )
+
+    test_data_count = cities_test_data.count
+    test_data_count = max_test_data_count if test_data_count > max_test_data_count
+
+    cities_test_data = cities_test_data.shuffle[0...test_data_count]
+
+    outlier_data = FeedsHelper.get_train_and_test_feeds( :outlier, true )
+    outlier_test_data = outlier_data[0...test_data_count]
+
+    confusion_matrix = { CITY => { CITY=>0, OUTLIER =>0 }, OUTLIER => { OUTLIER => 0, CITY => 0 } }
+
+    cities_classified = classify(cities_test_data)
+    confusion_matrix[CITY][CITY] = cities_classified[:good].count
+    confusion_matrix[CITY][OUTLIER] = cities_classified[:outlier].count
+
+    outlier_classified = classify(outlier_test_data)
+    confusion_matrix[OUTLIER][CITY] = outlier_classified[:good].count
+    confusion_matrix[OUTLIER][OUTLIER] = outlier_classified[:outlier].count
+
+    return confusion_matrix
+  end
+
+
 end
