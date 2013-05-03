@@ -21,29 +21,42 @@ namespace :application do
       end
     end
 
-    #Settings.bayes.regexp.downcased.each do |text_class_name, regexp|
-    #  ve = VocabularyEntry.find_or_create_by_token_and_regexp_rule_and_state text_class_name, regexp, VocabularyEntry::ACCEPTED_STATE
-    #  ve.text_classes << TextClass.find_by_name(text_class_name)
-    #  ve.save!
-    #end
-    #VocabularyEntry.find_or_create_by_regexp_rule_and_state Settings.bayes.regexp.domain, VocabularyEntry::ACCEPTED_STATE
-    #
-    #Settings.bayes.regexp.truly_cities.each do |text_class_name, regexp|
-    #  ve = VocabularyEntry.find_or_create_by_token_and_regexp_rule_and_state_and_truly_city text_class_name, regexp, VocabularyEntry::ACCEPTED_STATE, true
-    #  ve.text_classes << TextClass.find_by_name(text_class_name)
-    #  ve.save!
-    #end
+    Settings.bayes.regexp.downcased.each do |text_class_name, regexp|
+      ve = VocabularyEntry.find_or_create_by_token_and_regexp_rule_and_state text_class_name, regexp, VocabularyEntry::ACCEPTED_STATE
+      ve.text_classes << TextClass.find_by_name(text_class_name)
+      ve.save!
+    end
+    VocabularyEntry.find_or_create_by_regexp_rule_and_state Settings.bayes.regexp.domain, VocabularyEntry::ACCEPTED_STATE
 
+    Settings.bayes.regexp.truly_cities.each do |text_class_name, regexp|
+      ve = VocabularyEntry.find_or_create_by_token_and_regexp_rule_and_state_and_truly_city text_class_name, regexp, VocabularyEntry::ACCEPTED_STATE, true
+      ve.text_classes << TextClass.find_by_name(text_class_name)
+      ve.save!
+    end
   end
 
 
   desc "Make outlier svm classifier"
   task :make_outlier_svm_classifier => :environment do
-    svm = Svm.new
+    svm = OutlierSvm.new
     VocabularyEntry.testing_mode = 1
     svm.make_training_and_test_files
     svm.train_model :need_scaling => true, :need_optimizing => true
     VocabularyEntry.testing_mode = nil
+  end
+
+
+  desc "Make outlier ROSE-mnb classifier"
+  task :make_outlier_rose_classifier => :environment do
+    onb = OutlierNb.new
+    onb.make_classifier
+  end
+
+
+  desc "Make feeds cache"
+  task :make_feeds_cache  => :environment do
+    Feed.cached :recreate => true
+    Feed.cached :recreate => true, :feeds => Feed.tagged_with("outlier").all, :need_re => false
   end
 
 
