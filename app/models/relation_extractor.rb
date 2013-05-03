@@ -41,26 +41,26 @@ class RelationExtractor
 
 
   def test( patterns_hash = nil )
-    confusion_matrix = { 1 => { 1=>0, 0 => 0}, 0 => {1=>0, 0=>0} }
+    confusion_matrix = { 1 => { 1=>0, -1 => 0}, -1 => {1=>0, -1=>0} }
     patterns_hash ||= get_generalized_patterns
     @positive_test_set.each do |(example, id)|
       filter_features_in(example, false)
       if patterns_hash[example]
         confusion_matrix[1][1] += 1
       else
-        confusion_matrix[1][0] += 1
+        confusion_matrix[1][-1] += 1
       end
     end
 
     @negative_test_set.each do |(example, id)|
       if patterns_hash[example]
-        confusion_matrix[0][1] += 1
+        confusion_matrix[-1][1] += 1
       else
-        confusion_matrix[0][0] += 1
+        confusion_matrix[-1][-1] += 1
       end
     end
 
-    p confusion_matrix
+    return confusion_matrix
   end
 
 

@@ -27,6 +27,7 @@ module FeedsHelper
   end
 
 
+  #TODO: Make outlier_test tag in the future
   def self.get_train_and_test_feeds type, from_cache
       if from_cache
         case type

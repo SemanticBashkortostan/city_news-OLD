@@ -2,7 +2,7 @@
 
 #TODO: Make logging for Svm. Add weight correction for SVM.
 #NOTE: And here we needn't scaling, 'cause data already scaled into [0,1].
-class Svm
+class OutlierSvm
   include FeedsHelper
 
   # TRUE_CLASS - for outlier data; FALSE_CLASS - for good data
