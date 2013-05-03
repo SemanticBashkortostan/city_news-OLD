@@ -17,7 +17,7 @@ class NbWithDict
 
 
   def run
-    svm = Svm.new "outlier_classifier-new/outlier_city_svm", :from_cache => true
+    svm = OutlierSvm.new "outlier_classifier-new/outlier_city_svm", :from_cache => true
     @max_test_data_count = 1000
 
     cities_train_data, cities_test_data = svm.get_train_and_test_feeds(:city)
