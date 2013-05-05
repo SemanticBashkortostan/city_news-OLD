@@ -1,20 +1,24 @@
 #coding: utf-8
 
 class RelationExtractor
+
+  attr_reader :positive_train_set, :positive_test_set, :maybe_negative_set
+
   def initialize( need_preload = false )
-    preload if need_preload
     @patterns_filename = "#{Rails.root}/classifiers/relation_extractor/patterns_hash"
     @path = @patterns_filename.split("/")[0...-1].join("/")
-    FileUtils.mkdir_p(@path) unless File.exists?(path)
+    FileUtils.mkdir_p(@path) unless File.exists?(@path)
+    preload if need_preload
   end
 
 
   # Generalize pattern from Feed#feature_vectors_for_relation_extraction
-  def filter_features_in example, train=false
+  def filter_features_in init_example, train=false
+    example = init_example.clone
     ending_keys = [ :tc_right_context, :tc_left_context, :ne_right_context, :ne_left_context]
-    other_keys = [ :tc_is_first_token, :has_other_cities, :in_one_sent,
+    other_keys = [ :tc_is_first_token, :in_one_sent,
                    :tc_word_position, :tc_same_as_feed, :ne_is_first_token ]
-    if(example[:ne_right_context] || example[:ne_left_context])
+    if (example[:ne_right_context] || example[:ne_left_context]) && (example[:tc_right_context] || example[:tc_left_context])
       example.keys.each do |key|
         if ending_keys.include?(key) && example[key]
           if example[key].length > 3
@@ -22,11 +26,19 @@ class RelationExtractor
           else
             example[key] = example[key][-1]
           end
-        elsif not(other_keys.include?(key))
+        elsif !(other_keys.include?(key))
           example[key] = nil
         end
       end
+      return example
+    else
+      return nil
     end
+  end
+
+
+  def patterns_hash_file
+    FileMarshaling.marshal_load @patterns_filename
   end
 
 
@@ -36,11 +48,12 @@ class RelationExtractor
     set ||= @positive_train_set
 
     set.each_with_index do |(example, example_id), i|
-      filter_features_in(example, true)
-      dipre_hash[example] = dipre_hash[example].to_i + 1
+      puts "Processed: #{i}/#{set.count}"
+      filtered_example = filter_features_in(example)
+      dipre_hash[filtered_example] = dipre_hash[filtered_example].to_i + 1 if filtered_example
     end
 
-    patterns = Hash[dipre_hash.find_all{|generalized_pattern, seen_count| seen_count > 1}]
+    patterns = Hash[dipre_hash.find_all{|generalized_pattern, seen_count| seen_count > 2}]
     return patterns
   end
 
@@ -49,10 +62,11 @@ class RelationExtractor
   def extract_new_dict( set, patterns_hash )
     new_dict = {}
     set.each do |(example, id)|
-      to_apply_example = example.clone
-      filter_features_in(to_apply_example)
-      new_dict[example[:text_class_id]] ||= Set.new
-      new_dict[example[:text_class_id]] += [example[:ne_stem], example[:tc_stem]] if patterns_hash[to_apply_example]
+      filtered_example = filter_features_in(example)
+      if filtered_example
+        new_dict[example[:text_class_id]] ||= Set.new
+        new_dict[example[:text_class_id]] += [example[:ne_stem], example[:tc_stem]] if patterns_hash[filtered_example]
+      end
     end
     return new_dict
   end
@@ -75,7 +89,7 @@ class RelationExtractor
 
       break if init_count == patterns_hash.count
     end
-    performance(patterns_hash)
+    p performance(patterns_hash)
     FileMarshaling.marshal_save @patterns_filename, patterns_hash
     return patterns_hash
   end
@@ -100,6 +114,24 @@ class RelationExtractor
   def preload
     load_test_sets
     load_train_sets
+    @positive_train_set -= @positive_test_set
+    @maybe_negative_set -= @negative_test_set
+    @maybe_negative_set -= @positive_test_set
+  end
+
+
+  def load_test_sets
+    test_positive_filename = "#{@path}/positive_re_test_set-new"
+    test_negative_filename = "#{@path}/negative_re_test_set-new"
+    @positive_test_set = FileMarshaling.marshal_load test_positive_filename
+    @negative_test_set = FileMarshaling.marshal_load test_negative_filename
+  end
+
+
+  def load_train_sets
+    pos_and_neg_sets = extract_vectors_for_relation_extractor
+    @positive_train_set = pos_and_neg_sets[0]
+    @maybe_negative_set = pos_and_neg_sets[1]
   end
 
 
@@ -107,8 +139,8 @@ class RelationExtractor
     confusion_matrix = { 1 => { 1=>0, -1 => 0}, -1 => {1=>0, -1=>0} }
     patterns_hash ||= get_generalized_patterns
     @positive_test_set.each do |(example, id)|
-      filter_features_in(example, false)
-      if patterns_hash[example]
+      filtered_example = filter_features_in(example , false)
+      if patterns_hash[filtered_example]
         confusion_matrix[1][1] += 1
       else
         confusion_matrix[1][-1] += 1
@@ -116,8 +148,10 @@ class RelationExtractor
     end
 
     @negative_test_set.each do |(example, id)|
-      if patterns_hash[example]
+      filtered_example = filter_features_in(example , false)
+      if patterns_hash[filtered_example]
         confusion_matrix[-1][1] += 1
+        p [example, filtered_example, "-1 1"]
       else
         confusion_matrix[-1][-1] += 1
       end
@@ -132,8 +166,8 @@ class RelationExtractor
 
   def generate_dict_from_vocabulary_entry
     dict = {}
-    TextClass.all.each do |id|
-      dict[id] = VocabularyEntry.for_city(id).collect(&:token).to_set
+    TextClass.all.each do |text_class|
+      dict[text_class.id] = VocabularyEntry.for_city(text_class.id).collect(&:token).to_set
     end
     return dict
   end
@@ -141,8 +175,8 @@ class RelationExtractor
 
   def generate_truly_rules_from_vocabulary_entry
     truly_rules = {}
-    TextClass.all.each do |id|
-      truly_rules[id] = Regexp.new(VocabularyEntry.make_regexp_for_truly_entries(id)[0])
+    TextClass.all.each do |text_class|
+      truly_rules[text_class.id] = Regexp.new(VocabularyEntry.make_regexp_for_truly_entries(text_class.id)[0])
     end
     return truly_rules
   end
@@ -160,44 +194,29 @@ class RelationExtractor
      dict ||= generate_dict_from_vocabulary_entry
      truly_rules = generate_truly_rules_from_vocabulary_entry
      feeds = get_feeds
+     text_classes = TextClass.all
      feeds.each_with_index do |feed, ind|
        p "proccesed #{feed.id} :: #{ind}/#{feeds.count}"
        feed_feature_vectors = feed.feature_vectors_for_relation_extraction
        next unless feed_feature_vectors
        feed_feature_vectors.each { |fv|
-         inserted_to_positive  = false
-         TextClass.all.each do |tc|
+         text_classes.each do |tc|
            tc_id = tc.id
            if fv[:tc_stem] =~ truly_rules[tc_id] && fv[:tc_stem] != fv[:ne_stem] && fv[:ne_stem].length > 1
              city_dictionary = dict[tc_id]
              if city_dictionary.include?(fv[:ne_stem])
                positive_set << [fv, feed.id]
-               inserted_to_positive = true
+               break
+             else
+               maybe_negative_set << [fv, feed.id]
                break
              end
            end
          end
-         maybe_negative_set << [fv, feed.id] if !inserted_to_positive
        }
      end
      return [positive_set, maybe_negative_set]
    end
-
-
-  def load_test_sets
-    test_positive_filename = "#{@path}/positive_re_test_set-new"
-    test_negative_filename = "#{@path}/negative_re_test_set-new"
-    @positive_test_set = FileMarshaling.marshal_load test_positive_filename
-    @negative_test_set = FileMarshaling.marshal_load test_negative_filename
-  end
-
-
-  def load_train_sets
-    pos_and_neg_sets = extract_vectors_for_relation_extractor
-    @positive_train_set = pos_and_neg_sets[0]
-    @maybe_negative_set = pos_and_neg_sets[1]
-  end
-
 
 
   # count=51
