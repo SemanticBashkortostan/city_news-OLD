@@ -12,10 +12,10 @@ class VocabularyEntry < ActiveRecord::Base
 
 
   validate :truly_rule_validation
-  validate :token_uniqueness
+  validate :token_uniqueness_for_tokens_only
 
 
-  has_and_belongs_to_many :text_classes
+  has_and_belongs_to_many :text_classes, :uniq => true
 
 
   state_machine :state, :initial => :testing do
@@ -33,7 +33,8 @@ class VocabularyEntry < ActiveRecord::Base
 
   #NOTE: If regexp_rule contains '\' like '\d' then need adding escape for '\' like '\\d'
   #NOTE: Standard rules can applied into any token, Truly rules applied only for one-word token
-  scope :standard_rules, where('regexp_rule is not ? and (truly_city != ?)', nil, true)
+  #NOTE: truly_city now can be nil and its not good, `!= 't'` not give values where `is NULL`
+  scope :standard_rules, where('regexp_rule is not ? and (truly_city != ? or truly_city IS NULL)', nil, true)
   #NOTE: Each truly rule for one text class should map in 1 token and truly rule has only 1 text_class
   scope :truly, where('truly_city = ?', true)
   scope :for_city, lambda{ |tc_id| includes(:text_classes).where(:text_classes => { :id =>  tc_id} ) }
@@ -104,8 +105,10 @@ class VocabularyEntry < ActiveRecord::Base
   end
 
 
-  def token_uniqueness
-    errors.add :token, "Should be unique" if VocabularyEntry.only_tokens.pluck(:token).include?(token)
+  def token_uniqueness_for_tokens_only
+    if token && !regexp_rule && VocabularyEntry.only_tokens.pluck(:token).include?(token)
+      errors.add :token, "Should be unique"
+    end
   end
 
 
