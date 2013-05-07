@@ -1,9 +1,11 @@
 #coding: utf-8
 source 'https://rubygems.org'
 
-gem 'rails', '3.2.12'
+gem 'rails', '3.2.13'
 gem 'pg'
 gem 'activeadmin'
+
+gem 'activerecord-postgres-hstore'
 
 gem 'jquery-rails'
 
@@ -30,6 +32,13 @@ gem 'sitemap_generator'
 gem "naive_bayes", :git => "git://github.com/sld/naive_bayes.git"
 
 gem "feedbacks", :git => "git://github.com/sld/feedbacks.git"
+
+gem 'ruby-stemmer', '>=0.8.3', :require => 'lingua/stemmer'
+
+gem 'sunspot_rails'
+gem 'sunspot_solr' # optional pre-packaged Solr distribution for use in development
+
+gem 'state_machine'
 
 
 group :assets do

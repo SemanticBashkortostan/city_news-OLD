@@ -14,7 +14,6 @@ end
 every(11.minutes, 'fetch_other_feeds') do
    feeds_fetcher = Scheduler::ProductionFeedsFetcher.new
    feeds_fetcher.fetch_outlier_feeds
-   feeds_fetcher.fetch_unsatisfaction_feeds
 end
 
 every(31.minutes, 'classifier:train_by_production_data') do

@@ -9,19 +9,19 @@ GIT
 
 GIT
   remote: git://github.com/sld/naive_bayes.git
-  revision: 9b93060d27bd2902f61ad22fcf5cba10f9a35c3e
+  revision: 5fcedbcc1f86111e06b681d2e3c2146e7ad29fba
   specs:
     naive_bayes (0.0.1)
 
 GEM
   remote: https://rubygems.org/
   specs:
-    actionmailer (3.2.12)
-      actionpack (= 3.2.12)
-      mail (~> 2.4.4)
-    actionpack (3.2.12)
-      activemodel (= 3.2.12)
-      activesupport (= 3.2.12)
+    actionmailer (3.2.13)
+      actionpack (= 3.2.13)
+      mail (~> 2.5.3)
+    actionpack (3.2.13)
+      activemodel (= 3.2.13)
+      activesupport (= 3.2.13)
       builder (~> 3.0.0)
       erubis (~> 2.7.0)
       journey (~> 1.0.4)
@@ -41,19 +41,23 @@ GEM
       meta_search (>= 0.9.2)
       rails (>= 3.0.0)
       sass (>= 3.1.0)
-    activemodel (3.2.12)
-      activesupport (= 3.2.12)
+    activemodel (3.2.13)
+      activesupport (= 3.2.13)
       builder (~> 3.0.0)
-    activerecord (3.2.12)
-      activemodel (= 3.2.12)
-      activesupport (= 3.2.12)
+    activerecord (3.2.13)
+      activemodel (= 3.2.13)
+      activesupport (= 3.2.13)
       arel (~> 3.0.2)
       tzinfo (~> 0.3.29)
-    activeresource (3.2.12)
-      activemodel (= 3.2.12)
-      activesupport (= 3.2.12)
-    activesupport (3.2.12)
-      i18n (~> 0.6)
+    activerecord-postgres-hstore (0.7.6)
+      activerecord (>= 3.1)
+      pg-hstore (>= 1.1.5)
+      rake
+    activeresource (3.2.13)
+      activemodel (= 3.2.13)
+      activesupport (= 3.2.13)
+    activesupport (3.2.13)
+      i18n (= 0.6.1)
       multi_json (~> 1.0)
     acts-as-taggable-on (2.3.3)
       rails (~> 3.0)
@@ -156,7 +160,7 @@ GEM
     has_scope (0.5.1)
     hashie (1.2.0)
     highline (1.6.15)
-    hike (1.2.1)
+    hike (1.2.2)
     hpricot (0.8.6)
     http_parser.rb (0.5.3)
     i18n (0.6.1)
@@ -182,7 +186,7 @@ GEM
       websocket
     loofah (1.2.1)
       nokogiri (>= 1.4.4)
-    mail (2.4.4)
+    mail (2.5.3)
       i18n (>= 0.4.0)
       mime-types (~> 1.16)
       treetop (~> 1.4.8)
@@ -191,8 +195,8 @@ GEM
       activerecord (~> 3.1)
       activesupport (~> 3.1)
       polyamorous (~> 0.5.0)
-    mime-types (1.21)
-    multi_json (1.6.1)
+    mime-types (1.22)
+    multi_json (1.7.2)
     multipart-post (1.1.5)
     net-scp (1.0.4)
       net-ssh (>= 1.99.1)
@@ -209,9 +213,11 @@ GEM
       rack
       rake (>= 0.8.1)
     pg (0.14.1)
+    pg-hstore (1.1.7)
     polyamorous (0.5.0)
       activerecord (~> 3.0)
     polyglot (0.3.3)
+    pr_geohash (1.0.0)
     quiet_assets (1.0.1)
       railties (~> 3.1)
     rack (1.4.5)
@@ -221,27 +227,29 @@ GEM
       rack
     rack-test (0.6.2)
       rack (>= 1.0)
-    rails (3.2.12)
-      actionmailer (= 3.2.12)
-      actionpack (= 3.2.12)
-      activerecord (= 3.2.12)
-      activeresource (= 3.2.12)
-      activesupport (= 3.2.12)
+    rails (3.2.13)
+      actionmailer (= 3.2.13)
+      actionpack (= 3.2.13)
+      activerecord (= 3.2.13)
+      activeresource (= 3.2.13)
+      activesupport (= 3.2.13)
       bundler (~> 1.0)
-      railties (= 3.2.12)
-    railties (3.2.12)
-      actionpack (= 3.2.12)
-      activesupport (= 3.2.12)
+      railties (= 3.2.13)
+    railties (3.2.13)
+      actionpack (= 3.2.13)
+      activesupport (= 3.2.13)
       rack-ssl (~> 1.3.2)
       rake (>= 0.8.7)
       rdoc (~> 3.4)
       thor (>= 0.14.6, < 2.0)
-    rake (10.0.3)
-    rdoc (3.12.1)
+    rake (10.0.4)
+    rdoc (3.12.2)
       json (~> 1.4)
     responders (0.9.3)
       railties (~> 3.1)
     rolify (3.2.0)
+    rsolr (1.0.8)
+      builder (>= 2.1.2)
     rspec-core (2.12.1)
     rspec-expectations (2.12.0)
       diff-lcs (~> 1.1.3)
@@ -253,6 +261,7 @@ GEM
       rspec-core (~> 2.12.0)
       rspec-expectations (~> 2.12.0)
       rspec-mocks (~> 2.12.0)
+    ruby-stemmer (0.9.3)
     ruby_parser (3.0.4)
       sexp_processor (~> 4.1)
     rubyzip (0.9.9)
@@ -286,10 +295,18 @@ GEM
       multi_json (~> 1.0)
       rack (~> 1.0)
       tilt (~> 1.1, != 1.3.0)
+    state_machine (1.2.0)
+    sunspot (2.0.0)
+      pr_geohash (~> 1.0)
+      rsolr (~> 1.0.7)
+    sunspot_rails (2.0.0)
+      nokogiri
+      sunspot (= 2.0.0)
+    sunspot_solr (2.0.0)
     therubyracer (0.10.2)
       libv8 (~> 3.3.10)
-    thor (0.17.0)
-    tilt (1.3.3)
+    thor (0.18.1)
+    tilt (1.3.7)
     tinder (1.9.1)
       eventmachine (>= 0.12.0, < 2)
       faraday (~> 0.8)
@@ -307,7 +324,7 @@ GEM
       eventmachine (>= 0.12.8)
       http_parser.rb (~> 0.5.1)
       simple_oauth (~> 0.1.4)
-    tzinfo (0.3.35)
+    tzinfo (0.3.37)
     uglifier (1.3.0)
       execjs (>= 0.3.0)
       multi_json (~> 1.0, >= 1.0.2)
@@ -325,6 +342,7 @@ PLATFORMS
 
 DEPENDENCIES
   activeadmin
+  activerecord-postgres-hstore
   acts-as-taggable-on
   bootstrap-sass (>= 2.1.1.0)
   cancan (>= 1.6.8)
@@ -351,9 +369,10 @@ DEPENDENCIES
   passenger
   pg
   quiet_assets (>= 1.0.1)
-  rails (= 3.2.12)
+  rails (= 3.2.13)
   rolify (>= 3.2.0)
   rspec-rails (>= 2.11.4)
+  ruby-stemmer (>= 0.8.3)
   ruby_parser (>= 3.0.1)
   russian
   rvm-capistrano
@@ -362,6 +381,9 @@ DEPENDENCIES
   simple_form (>= 2.0.4)
   simpleidn
   sitemap_generator
+  state_machine
+  sunspot_rails
+  sunspot_solr
   therubyracer (>= 0.10.2)
   uglifier (>= 1.0.3)
   whenever

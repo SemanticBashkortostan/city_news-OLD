@@ -108,11 +108,6 @@ namespace :production_feeds do
   end
 
 
-  task :fetch_unsatisfaction_feeds => :environment do
-    Scheduler::ProductionFeedsFetcher.new.fetch_unsatisfaction_feeds
-  end
-
-
   task :fetch_and_classify => :environment do
     Scheduler::ProductionFeedsFetcher.new.fetch_and_classify
   end

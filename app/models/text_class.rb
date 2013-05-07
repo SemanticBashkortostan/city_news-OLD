@@ -9,4 +9,6 @@ class TextClass < ActiveRecord::Base
 
   has_many :docs_counts
   has_many :classifiers, :through => :docs_counts
+
+  has_and_belongs_to_many :vocabulary_entries
 end

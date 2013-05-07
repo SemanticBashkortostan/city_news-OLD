@@ -75,7 +75,8 @@ describe Classifier do
       @classifier_nb1.preload_classifier
       @train_data.each do |(str, klass)|
         @classifier_nb1.train(str, klass)
-      end
+      end      
+      @classifier_nb1.docs_counts(TextClass.find_by_name(:c).id).should == 3
       @classifier_nb1.save_to_database!
 
       Feature.uniq.pluck(:token).sort.should == @features
@@ -160,8 +161,10 @@ describe Classifier do
         initialize_three_klass_case
         convert_train_data_to_feed( @train_data2 )
         classifier = Classifier.make_from_text_classes( [ @text_class1, @text_class2, @text_class3 ], :name => Classifier::NAIVE_BAYES_NAME )
+        classifier.docs_counts(@text_class3.id).should > 0
         classifier.extract_class!( @text_class3 )
         classifier.text_classes.should == [@text_class1, @text_class2]
+        classifier.docs_counts(@text_class3.id).should == 0
         classifier.text_class_features.where( :text_class_id => @text_class3 ).should be_empty
         TextClassFeature.where( :text_class_id => @text_class3 ).should_not be_empty
         classifier.reload
@@ -207,12 +210,13 @@ describe Classifier do
       Feed.create! :summary => "Tokyo", :text_class_id => TextClass.last.id, :url => "dsa#2", :mark_list => ["dev_test"]
       Feed.create! :summary => "Chinese", :text_class_id => TextClass.first.id, :url => "dsda#2", :mark_list => ["dev_test"]
 
-      classifier = Classifier.make_from_text_classes([@text_class1, @text_class2], :name => Classifier::NAIVE_BAYES_NAME)
+      classifier = Classifier.make_from_text_classes([@text_class1, @text_class2], :name => Classifier::NAIVE_BAYES_NAME)      
 
       classifier.train_feeds.should include(Feed.tagged_with("test_train").first)
       Feed.tagged_with("test_train").first.classifiers.should include(classifier)
 
       classifier.test
+      p classifier
     end
   end
 
