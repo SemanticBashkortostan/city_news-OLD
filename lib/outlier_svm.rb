@@ -11,7 +11,7 @@ class OutlierSvm
 
 
   # +filename_prefix+ -examples:( folder1/filename or filename or folder1/folder2/filename )
-  def initialize(filename_prefix = "outlier_classifier-new/outlier_city_svm", params={})
+  def initialize(filename_prefix = "#{Rails.root}/project_files/outlier_classifier-new/outlier_city_svm", params={})
     @max_test_data_count = 1000
     @file_path = "#{Rails.root}/"
 

@@ -1,13 +1,14 @@
 class OutlierNb
   include FeedsHelper
+  include Statistic
 
   CITY = -1
   OUTLIER = 1
 
-  def initialize filename="classifiers/outlier-rose-nb"
+  def initialize filename="outlier-rose-nb"
     @max_test_data_count = 1000
 
-    @filename =  "#{Rails.root}/#{filename}"
+    @filename =  "#{Rails.root}/project_files/classifiers/#{filename}"
     path = @filename.split("/")[0...-1].join("/")
     FileUtils.mkdir_p(path) unless File.exists?(path)
   end
@@ -92,7 +93,10 @@ class OutlierNb
     confusion_matrix[OUTLIER][CITY] = outlier_classified[:good].count
     confusion_matrix[OUTLIER][OUTLIER] = outlier_classified[:outlier].count
 
-    return confusion_matrix
+    return {
+             :confusion_matrix => confusion_matrix, :accuracy => accuracy(confusion_matrix),
+             :f_measure_city => f_measure(confusion_matrix, CITY), :f_measure_outlier => f_measure(confusion_matrix, OUTLIER)
+           }
   end
 
 
