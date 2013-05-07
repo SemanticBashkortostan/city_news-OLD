@@ -42,8 +42,8 @@ class Classifier < ActiveRecord::Base
     if features_vector.empty?
       p ["EXCEPTION", feed, klass]
       DevelopmentLogger.logger.error ["Empty feature vector in Classifier#train!!!", feed, klass, features_vector]
-      #return nil
-      raise Exception
+      return nil
+      #raise Exception
     end
 
     self.docs_counts = {:text_class_id => klass_id, :count => docs_counts(klass_id) + 1}
@@ -83,7 +83,7 @@ class Classifier < ActiveRecord::Base
   def get_training_feeds
     training_feeds_hash = {}
     if is_rose_naive_bayes?
-      raise Exception if text_classes.count > 1
+      raise "In current state one vs all using, so text class count should == 1" if text_classes.count > 1
       main_text_class = text_classes.first
       other_text_class = OTHER_TEXT_CLASS
 

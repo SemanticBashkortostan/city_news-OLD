@@ -9,6 +9,7 @@ module ClassifierPerformance
   # +options[:tags_options]+ - parameter which responses how to fetch, like {:match_all => true} or {:any => true}
   # +options[:feeds_count]+ - default fetch 20% from train_set_count feeds with specific tags
   # +options[:is_random]+ - if true then fetch feeds randomly
+  # +options[:file_prefix]
   def test( options={} )
     # +:testing_options+ - test(options); +:data+ - array with [true or false, feed.id, feed.tc.name, tc.name, str];
     # +:uncorrect_data+ - data not accepted by filter [feed.id, feed.tc.name, str];
