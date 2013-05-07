@@ -48,7 +48,7 @@ class Feed < ActiveRecord::Base
   def self.cached( options={} )
     options[:filename] ||= "default_feeds_cache"
     options[:need_re] ||= true
-    filename = "tmp/cache/#{options[:filename]}"
+    filename = "#{Rails.root}/project_files/cache/#{options[:filename]}"
     return FileMarshaling::marshal_load(filename) if File.exist?( filename ) && !options[:recreate]
 
     feeds = Set.new

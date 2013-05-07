@@ -2,10 +2,12 @@
 
 class RelationExtractor
 
+  include Statistic
+
   attr_reader :positive_train_set, :positive_test_set, :maybe_negative_set
 
   def initialize( need_preload = false )
-    @patterns_filename = "#{Rails.root}/classifiers/relation_extractor/patterns_hash"
+    @patterns_filename = "#{Rails.root}/project_files/classifiers/relation_extractor/patterns_hash"
     @path = @patterns_filename.split("/")[0...-1].join("/")
     FileUtils.mkdir_p(@path) unless File.exists?(@path)
     preload if need_preload
@@ -39,6 +41,11 @@ class RelationExtractor
 
   def patterns_hash_file
     FileMarshaling.marshal_load @patterns_filename
+  end
+
+
+  def patterns_hash_file_exist?
+    File.exist? @patterns_filename
   end
 
 
@@ -157,7 +164,10 @@ class RelationExtractor
       end
     end
 
-    return confusion_matrix
+    return {
+             :confusion_matrix => confusion_matrix, :accuracy => accuracy(confusion_matrix),
+             :f_measure_city => f_measure(confusion_matrix, 1), :f_measure_outlier => f_measure(confusion_matrix, -1)
+           }
   end
 
 
