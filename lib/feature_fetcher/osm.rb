@@ -16,20 +16,21 @@ module FeatureFetcher
     # +bounding_box+ is a Hash, look at up
     def initialize(bounding_box, filename )
       @bounding_box = bounding_box
-      @filename = "#{Rails.root}/lib/feature_fetcher/osm_maps/#{filename}"
+      @filename = "#{Rails.root}/project_files/osm_maps/#{filename}"
     end
 
 
     def get_part_of_map
-      bashkortostan = "#{Rails.root}/lib/feature_fetcher/osm_maps/bashkortostan.osm"      
+      bashkortostan = "#{Rails.root}/project_files/bashkortostan.osm"
+      raise Exception unless File.exist?(bashkortostan)
       exec = "osmosis --read-xml file=\"#{bashkortostan}\" --bounding-box top=#{@bounding_box[:top]} left=#{@bounding_box[:left]} \
               bottom=#{@bounding_box[:bottom]} right=#{@bounding_box[:right]} --write-xml file=\"#{@filename}\""
       system exec
     end
 
 
-    # Возвращает массив с элементами вида - [name, amenity, osm_id]
-    # где name.length > 2
+    # Return array with elements like [name, amenity, osm_id]
+    # where name.length > 2
     def get_features
       xmlfeed = Nokogiri::XML(open(@filename))
       rows = xmlfeed.xpath("//*[@k=\"name\"]")
@@ -42,6 +43,21 @@ module FeatureFetcher
         features << [name, amenity, osm_id] if name.length > 2
       end                
       return features
+    end
+
+
+    def self.make_maps_from_text_classes
+      osm_arr = [
+                  ["sterlitamak.osm", FeatureFetcher::Osm::STERLITAMAK_BOUNDING_BOX],
+                  ["salavat.osm", FeatureFetcher::Osm::SALAVAT_BOUNDING_BOX],
+                  ["neftekamsk.osm", FeatureFetcher::Osm::NEFTEKAMSK_BOUNDING_BOX],
+                  ["ishimbay.osm", FeatureFetcher::Osm::ISHIMBAY_BOUNDING_BOX],
+                  ["ufa.osm", FeatureFetcher::Osm::UFA_BOUNDING_BOX]
+                ]
+      osm_arr.each do |(filename, bounding_box)|
+        osm = FeatureFetcher::Osm.new bounding_box, filename
+        osm.get_part_of_map
+      end
     end
 
 

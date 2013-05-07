@@ -73,4 +73,25 @@ class Dict
     stemmer= Lingua::Stemmer.new(:language => "ru")  
     string.scan( words_regexp ).map{|word| stemmer.stem( word )}.join(" ").mb_chars.downcase.to_s
   end
+
+
+  def self.get_stem_dicts
+    dict_filename = "#{Rails.root}/project_files/stem_vocabulary_hash"
+    osm_arr = {
+                TextClass.find_by_name("Стерлитамак").id => ["sterlitamak.osm", FeatureFetcher::Osm::STERLITAMAK_BOUNDING_BOX],
+                TextClass.find_by_name("Салават").id => ["salavat.osm", FeatureFetcher::Osm::SALAVAT_BOUNDING_BOX],
+                TextClass.find_by_name("Нефтекамск").id => ["neftekamsk.osm", FeatureFetcher::Osm::NEFTEKAMSK_BOUNDING_BOX],
+                TextClass.find_by_name("Ишимбай").id => ["ishimbay.osm", FeatureFetcher::Osm::ISHIMBAY_BOUNDING_BOX],
+                TextClass.find_by_name("Уфа").id => ["ufa.osm", FeatureFetcher::Osm::UFA_BOUNDING_BOX]
+              }
+    vocabulary = {}
+    osm_arr.each do |klass_id, params|
+      print "#{klass_id} processing..."
+      osm_feature_fetcher = FeatureFetcher::Osm.new params[1], params[0]
+      dict = Dict.new.stem_dict osm_feature_fetcher.get_features
+      vocabulary[klass_id] = dict
+    end
+    FileMarshaling.marshal_save( dict_filename, vocabulary )
+    return vocabulary
+  end
 end
