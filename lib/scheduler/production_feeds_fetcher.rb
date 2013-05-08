@@ -64,7 +64,7 @@ class Scheduler::ProductionFeedsFetcher
         str = ["Error in production_feeds:fetch_and_classify #{path}", e]
         p str
         BayesLogger.bayes_logger.error str
-        raise Exception
+        raise Exception if Rails.env == "development"
       end
     end
   end
