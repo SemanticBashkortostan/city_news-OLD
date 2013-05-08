@@ -42,9 +42,15 @@ namespace :application do
   end
 
 
-  desc "Make RelationExtractor and extract patterns"
-  task :make_relation_extractor_and_extract_patterns => :environment do
-
+  desc "Check fetched unclassified with outlier and testing mode"
+  task :check_fetched_with_outlier => :environment do
+    VocabularyEntry.testing_mode = 1
+    onb = OutlierNb.new
+    onb.preload
+    onb.classify(Feed.unclassified_fetched.all)[:outlier].each do |feed|
+      feed.mark_list = ["new_outlier"]
+      feed.save!
+    end
   end
 
 

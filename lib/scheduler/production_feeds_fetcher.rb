@@ -64,6 +64,7 @@ class Scheduler::ProductionFeedsFetcher
         str = ["Error in production_feeds:fetch_and_classify #{path}", e]
         p str
         BayesLogger.bayes_logger.error str
+        raise Exception
       end
     end
   end
@@ -75,6 +76,7 @@ class Scheduler::ProductionFeedsFetcher
 
 
   def fetch_and_classify
+    VocabularyEntry.testing_mode = 1
     fetch
     classify
   end
