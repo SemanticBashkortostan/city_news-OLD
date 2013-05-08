@@ -79,6 +79,7 @@ class Scheduler::ProductionFeedsFetcher
     VocabularyEntry.testing_mode = 1
     fetch
     classify
+    VocabularyEntry.testing_mode = nil
   end
 
 end
