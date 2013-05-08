@@ -1,7 +1,7 @@
 # Classifier's wrapper which runs in clock daemon by schedule
 class Scheduler::Classifier
   def self.classify_fetched
-    ensbm_rose_mnb_classifiers = Classifier.where("name like '#{Classifier::ROSE_NAIVE_BAYES_NAME}%'").all.collect do |cl|
+    ensbm_rose_mnb_classifiers = Classifier.where("name like '#{Classifier::ROSE_NAIVE_BAYES_NAME}%-%-%'").all.collect do |cl|
       ClassifiersEnsemble.new( [cl], :preload => true, :multiplicator => 1000 )
     end
 
@@ -10,7 +10,7 @@ class Scheduler::Classifier
     Feed.unclassified_fetched.all.each do |feed|
       ensbm_rose_mnb_classifiers.each do |classifier_ensb|
         classify_info = classifier_ensb.classify( feed )
-        tag_list = ["classified"]
+        tag_list = ["new_classified"]
         if classify_info[:recommend_as_train] == true
           tag_list << "to_train"
         end
@@ -19,18 +19,6 @@ class Scheduler::Classifier
                                     :to_train => classify_info[:recommend_as_train], :score => classify_info[:score]
       end
       feed.text_class_id = feed.classified_infos.max_by(&:score).text_class_id
-      feed.save!
-    end
-
-    Feed.tagged_with("new_unsatisfaction", :match_all => true).all.each do |feed|
-      ensbm_rose_mnb_classifiers.each do |classifier_ensb|
-        classify_info = classifier_ensb.classify( feed )
-        tag_list = ["classified"]
-        feed.mark_list += tag_list
-        feed.classified_infos.build :classifier_id => classifier_ensb.classifier_id, :text_class_id => TextClass.find_by_id( classify_info[:class] ).try(:id),
-                                    :score => classify_info[:score]
-      end
-      feed.text_class_id = feed.classified_infos.with_text_class.max_by(&:score).text_class_id
       feed.save!
     end
   end
