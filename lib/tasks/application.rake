@@ -54,6 +54,19 @@ namespace :application do
   end
 
 
+  desc "Calculate peroformance for classifiers and write to file"
+  task :calculate_classifiers_performances => :environment do
+    file_prefix = "standard-rmnb-350"
+    Classifier.all.each do |cl|
+      if cl.is_rose_naive_bayes?  && !cl.name["with-exec-re"]
+        cl.preload_classifier
+        cl.test :feeds_count => 350, :tags => Classifier::TRAIN_TAGS,
+                :tags_options => { :exclude => true }, :file_prefix => file_prefix
+      end
+    end
+  end
+
+
   desc 'Updated to new version'
   task :update_to_new_version => :environment do
 
