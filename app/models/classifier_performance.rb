@@ -31,10 +31,18 @@ module ClassifierPerformance
     feeds_count ||= ( train_set_count * 0.2 ).ceil
     testing_feeds = []
     text_classes.each_with_index do |tc, ind|
-      tc = TextClass.all - text_classes if tc == Classifier::OTHER_TEXT_CLASS
-      tmp_tags_options = tags_options.clone
-      scope = Feed.where(:text_class_id => tc).tagged_with( tags, tmp_tags_options )
-      testing_feeds << ( (is_random == true ? scope.order("RANDOM()").limit(feeds_count) : scope.limit(feeds_count)) )
+      if tc == Classifier::OTHER_TEXT_CLASS
+        sub_tcs = TextClass.all - text_classes
+        sub_tcs.each do |sub_tc|
+          tmp_tags_options = tags_options.clone
+          scope = Feed.where(:text_class_id => sub_tc).tagged_with( tags, tmp_tags_options )
+          testing_feeds << ( (is_random == true ? scope.order("RANDOM()").limit(feeds_count/sub_tcs.count) : scope.order("id").limit(feeds_count/sub_tcs.count)) )
+        end
+      else
+        tmp_tags_options = tags_options.clone
+        scope = Feed.where(:text_class_id => tc).tagged_with( tags, tmp_tags_options )
+        testing_feeds << ( (is_random == true ? scope.order("RANDOM()").limit(feeds_count) : scope.order("id").limit(feeds_count)) )
+      end
     end
     testing_feeds.flatten!
     if is_rose_naive_bayes?

@@ -14,7 +14,7 @@ class Feed < ActiveRecord::Base
   has_many :classified_infos, :class_name => 'FeedClassifiedInfo', :dependent => :destroy
   has_many :classifiers, :through => :classified_infos
 
-  validates :url, :uniqueness => true
+  validates :url, :uniqueness => true, :on => :create
   validate :summary_or_title_presence
 
   scope :without_uncorrect_tags, tagged_with(Classifier::UNCORRECT_DATA_TAGS, :exclude => true )
