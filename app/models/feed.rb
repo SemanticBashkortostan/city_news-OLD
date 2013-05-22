@@ -49,6 +49,7 @@ class Feed < ActiveRecord::Base
     options[:filename] ||= "default_feeds_cache"
     options[:need_re] ||= true
     filename = "#{Rails.root}/project_files/cache/#{options[:filename]}"
+    options[:filename] = "testing_#{options[:filename]}" if VocabularyEntry.testing_mode
     return FileMarshaling::marshal_load(filename) if File.exist?( filename ) && !options[:recreate]
 
     feeds = Set.new
