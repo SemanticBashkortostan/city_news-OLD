@@ -5,8 +5,8 @@
   %h2= Russian.strftime Time.parse(date), "%a, %d %B %Y"
   - entries.each do |entry|
     %span.city= link_to entry.text_class.name, feeds_city_path( :city => entry.text_class.eng_name.downcase ) if params[:city].blank?
-    =link_to entry.title.html_safe, feeds_goto_path( :url => entry.url ), :class => :entry
-    %p= entry.summary.html_safe
+    =link_to entry.title.try(:html_safe), feeds_goto_path( :url => entry.url ), :class => :entry
+    %p= entry.summary.try(:html_safe)
 
 
 = paginate @feeds
