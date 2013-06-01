@@ -1,19 +1,13 @@
 City News
 ========================
 
-This application was generated with the rails_apps_composer gem:
-https://github.com/RailsApps/rails_apps_composer
-provided by the RailsApps Project:
-http://railsapps.github.com/
+Readme is under development.
 
 ________________________
 
-Recipes:
-["controllers", "core", "email", "extras", "frontend", "gems", "git", "init", "models", "prelaunch", "railsapps", "readme", "routes", "saas", "setup", "testing", "views"]
-
-Preferences:
-{:git=>true, :railsapps=>"rails3-bootstrap-devise-cancan", :database=>"sqlite", :unit_test=>"rspec", :integration=>"cucumber", :fixtures=>"factory_girl", :frontend=>"bootstrap", :bootstrap=>"sass", :email=>"gmail", :authentication=>"devise", :devise_modules=>"default", :authorization=>"cancan", :starter_app=>"admin_app", :form_builder=>"simple_form", :quiet_assets=>true, :dev_webserver=>"webrick", :prod_webserver=>"unicorn", :templates=>"haml", :ban_spiders=>true, :jsruntime=>true}
+Web site: http://rbcitynews.ru
 
 ________________________
 
 License
+
