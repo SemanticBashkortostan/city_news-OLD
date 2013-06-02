@@ -1,8 +1,8 @@
 #coding: utf-8
+
+# Rules for initial filling standard_rules and truly_rules in VocabularyEntry. See application.rake.
 defaults: &defaults
   bayes:
-    klasses: ["Уфа", "Стерлитамак", "Салават", "Ишимбай", "Нефтекамск"]
-    shorten_klasses: ["ufa", "str", "slv", "ish", "neft"]
     regexp:
       Уфа: "(Уф+[[:word:]]+|УФ+[[:word:]]+|уфим+[[:word:]]+|Салав+[[:word:]]+[ ]+Юла+[[:word:]]+)"
       Стерлитамак: "(Стерлит+[[:word:]]+|СТЕРЛИТ+[[:word:]]+|стерлит+[[:word:]]+)"
