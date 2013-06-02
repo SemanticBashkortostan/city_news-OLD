@@ -4,7 +4,6 @@ require File.expand_path("../../config/environment", __FILE__)
 require 'rspec/rails'
 require 'email_spec'
 require 'rspec/autorun'
-require 'sunspot/rails/spec_helper'
 
 
 # Requires supporting ruby files with custom matchers and macros, etc,
@@ -47,10 +46,8 @@ RSpec.configure do |config|
   end
   config.before(:each) do
     DatabaseCleaner.start
-    ::Sunspot.session = ::Sunspot::Rails::StubSessionProxy.new(::Sunspot.session)
   end
   config.after(:each) do
     DatabaseCleaner.clean
-    ::Sunspot.session = ::Sunspot.session.original_session
   end
 end
