@@ -1,3 +1,21 @@
+# CityNews - news aggregator software
+# Copyright (C) 2013 Idris Yusupov
+#
+# This file is part of CityNews.
+#
+# CityNews is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# CityNews is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with CityNews.  If not, see <http://www.gnu.org/licenses/>.
+
 class Classifier < ActiveRecord::Base
   include ClassifierNaiveBayes
   include ClassifierPerformance
@@ -163,8 +181,7 @@ class Classifier < ActiveRecord::Base
     return feed.string_for_classifier if Rails.env == "test" && feed.is_a?(Feed)
 
     if is_naive_bayes?
-      filtered_str = nb_filter_string( feed.string_for_classifier )
-      return nb_get_features( filtered_str )
+      return feed.features_for_text_classifier
     elsif is_rose_naive_bayes?
       return feed.features_for_text_classifier
     end
@@ -173,13 +190,6 @@ class Classifier < ActiveRecord::Base
 
   def form_docs_counts_hash
     {:docs_count => Hash[text_classes.collect{|tc| tc.is_a?(TextClass) ? [tc.id, docs_counts(tc.id)] : [tc, docs_counts(tc)]  }]}
-  end
-
-
-  def vocabulary
-    filename = 'big_vocabulary'
-    @vocabulary ||= Marshal.load( File.binread(filename) )
-    return @vocabulary
   end
 
 
@@ -269,23 +279,6 @@ class Classifier < ActiveRecord::Base
         train( feed, tc )
       end
     end
-  end
-
-
-  def filter_by_vocabulary( features )
-    filtered = []
-    not_in_voc = []
-    return filtered if features.blank?
-    features.each do |f|
-      if f.is_a?(Array)
-        filtered += f
-      elsif vocabulary.include?( f )
-        filtered << f
-      else
-        not_in_voc << f
-      end
-    end
-    return filtered
   end
 
 

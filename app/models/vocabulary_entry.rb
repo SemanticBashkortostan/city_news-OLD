@@ -48,6 +48,7 @@ class VocabularyEntry < ActiveRecord::Base
   end
 
 
+  # Returns truly_rule mapping word if string satisfy some truly_rule regexp
   def self.is_truly? string
     found = VocabularyEntry.try_truly_rules(string) if string.split.count == 1
     return found

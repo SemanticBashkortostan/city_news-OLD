@@ -38,31 +38,6 @@ module ClassifierNaiveBayes
   end
 
 
-  def nb_filter_string str
-    filtered_str = str.clone
-    # Get regexp through all classes for 'Салават Юлаев' case
-    TextClass.pluck(:name).each do |tc_name|
-      filtered_str.gsub!( Regexp.new(Settings.bayes.regexp[tc_name]), tc_name )
-    end
-    return filtered_str
-  end
-
-
-  def nb_get_features str
-    features = []
-    text_classes.each do |tc|
-      matched = str.scan( Regexp.new(Settings.bayes.regexp[tc.name]) )
-      features += [ tc.name ] * matched.count
-    end
-    # Add domain only if present some city named feature
-    unless features.empty?
-      domain = str.scan( Regexp.new( Settings.bayes.regexp["domain"] ) )
-      features << domain[0].split("/")[2] unless domain.empty?
-    end
-    return features
-  end
-
-
   def naive_bayes_train( features_vector, klass_id )
     @classifier.train( features_vector, klass_id )
   end
