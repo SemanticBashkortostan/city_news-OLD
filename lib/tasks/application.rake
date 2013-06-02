@@ -170,11 +170,13 @@ namespace :application do
       end
     end
 
+    # Initial filling VocabularyEntry rules
     Settings.bayes.regexp.downcased.each do |text_class_name, regexp|
       ve = VocabularyEntry.find_or_create_by_token_and_regexp_rule_and_state text_class_name, regexp, VocabularyEntry::ACCEPTED_STATE
       ve.text_classes << TextClass.find_by_name(text_class_name)
       ve.save!(:validate => false)
     end
+    #NOTE: Maybe use only Feed#domain instead of applying domain rule in VocabularyEntry
     ve = VocabularyEntry.new :regexp_rule => Settings.bayes.regexp.domain, :state => VocabularyEntry::ACCEPTED_STATE
     ve.save!(:validate => false)
 
