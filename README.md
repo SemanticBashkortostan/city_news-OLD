@@ -1,6 +1,8 @@
 City News
 ========================
 
+# Description
+
 This is news aggregator which gets news from different sources and classify them by city.
 
 Project and documentation is under development now.
@@ -11,7 +13,7 @@ Web site based on this project: http://rbcitynews.ru
 
 ________________________
 
-= License
+# License
 
 Copyright (C) 2013 Idris Yusupov
 
