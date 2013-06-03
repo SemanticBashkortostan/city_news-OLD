@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20130416131219) do
+ActiveRecord::Schema.define(:version => 20130428085308) do
 
   create_table "active_admin_comments", :force => true do |t|
     t.string   "resource_id",   :null => false
@@ -66,6 +66,19 @@ ActiveRecord::Schema.define(:version => 20130416131219) do
     t.datetime "created_at", :null => false
     t.datetime "updated_at", :null => false
   end
+
+  create_table "feed_classified_infos", :force => true do |t|
+    t.integer  "feed_id"
+    t.integer  "classifier_id"
+    t.integer  "text_class_id"
+    t.boolean  "to_train"
+    t.float    "score"
+    t.datetime "created_at",    :null => false
+    t.datetime "updated_at",    :null => false
+  end
+
+  add_index "feed_classified_infos", ["feed_id", "classifier_id"], :name => "index_feed_classified_infos_on_feed_id_and_classifier_id"
+  add_index "feed_classified_infos", ["feed_id"], :name => "index_feed_classified_infos_on_feed_id"
 
   create_table "feed_sources", :force => true do |t|
     t.integer  "text_class_id"
@@ -154,6 +167,13 @@ ActiveRecord::Schema.define(:version => 20130416131219) do
     t.string   "prepositional_name"
   end
 
+  create_table "text_classes_vocabulary_entries", :force => true do |t|
+    t.integer "text_class_id"
+    t.integer "vocabulary_entry_id"
+  end
+
+  add_index "text_classes_vocabulary_entries", ["text_class_id", "vocabulary_entry_id"], :name => "voc_entry_tc_index"
+
   create_table "users", :force => true do |t|
     t.string   "email",                  :default => "", :null => false
     t.string   "encrypted_password",     :default => "", :null => false
@@ -179,5 +199,18 @@ ActiveRecord::Schema.define(:version => 20130416131219) do
   end
 
   add_index "users_roles", ["user_id", "role_id"], :name => "index_users_roles_on_user_id_and_role_id"
+
+  create_table "vocabulary_entries", :force => true do |t|
+    t.string   "token"
+    t.string   "regexp_rule"
+    t.integer  "state"
+    t.datetime "created_at",  :null => false
+    t.datetime "updated_at",  :null => false
+    t.boolean  "truly_city"
+  end
+
+  add_index "vocabulary_entries", ["state", "regexp_rule"], :name => "index_vocabulary_entries_on_state_and_regexp_rule"
+  add_index "vocabulary_entries", ["state", "token"], :name => "index_vocabulary_entries_on_state_and_token"
+  add_index "vocabulary_entries", ["token"], :name => "index_vocabulary_entries_on_token"
 
 end
