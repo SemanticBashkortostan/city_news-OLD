@@ -62,7 +62,9 @@ class ClassifiersEnsemble
       end
     end
 
-    maybe_good = classes_info.max_by{|k, v| v[:match_count]}
+    maybe_good = classes_info.max_by{|k, v| v[:match_count]}    
+    return nil if !maybe_good
+
     ret_info = { :class => maybe_good.first, :score => maybe_good.last[:score]}
     if maybe_good.last[:recommend_to_train] >= maybe_good.last[:not_recommend_to_train]
       ret_info[:recommend_as_train] = true

@@ -29,6 +29,7 @@ class Scheduler::Classifier
     Feed.unclassified_fetched.all.each do |feed|
       ensbm_rose_mnb_classifiers.each do |classifier_ensb|
         classify_info = classifier_ensb.classify( feed )
+        next if !classify_info
         tag_list = ["new_classified"]
         if classify_info[:recommend_as_train] == true
           tag_list << "to_train"
@@ -37,7 +38,7 @@ class Scheduler::Classifier
         feed.classified_infos.build :classifier_id => classifier_ensb.classifier_id, :text_class_id => TextClass.find_by_id( classify_info[:class] ).try(:id),
                                     :to_train => classify_info[:recommend_as_train], :score => classify_info[:score]
       end
-      feed.text_class_id = feed.classified_infos.max_by(&:score).text_class_id
+      feed.text_class_id = feed.classified_infos.max_by(&:score).try :text_class_id
       feed.save!
     end
   end
