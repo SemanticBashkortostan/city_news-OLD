@@ -71,13 +71,12 @@ class Scheduler::ProductionFeedsFetcher
         tmp_feeds = make_tmp_feeds( feed[path].entries )
         outlier_and_goods = get_outlier_and_goods( tmp_feeds )
         outlier_and_goods[:good].each do |feed|
-          feed.save!
-          fetched += 1
+          fetched += 1 if feed.save           
           break if fetched >= max_fetched
         end
         outlier_and_goods[:outlier].each do |feed|
           feed.mark_list = ["new_unsatisfaction"]
-          feed.save!
+          feed.save
         end
       rescue Exception => e
         str = ["Error in production_feeds:fetch_and_classify #{path}", e]
