@@ -1,6 +1,8 @@
 City News
 ========================
 
+Wiki: http://github.com/sld/city_news/wiki
+
 # Description
 
 This is news aggregator which gets news from different sources and classify them by city.
