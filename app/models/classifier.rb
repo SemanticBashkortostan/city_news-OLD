@@ -106,7 +106,10 @@ class Classifier < ActiveRecord::Base
       other_text_class = OTHER_TEXT_CLASS
 
       training_feeds_hash[main_text_class] = main_text_class.feeds.tagged_with( TRAIN_TAGS, :any => true )
-      training_feeds_hash[other_text_class] = Feed.tagged_with( TRAIN_TAGS, :any => true ).where(:text_class_id => TextClass.all - [main_text_class])
+      # Get all training feeds for OTHER_TEXT_CLASS with TRAIN_TAGS but exclude "new_classsified" tagged feeds,'cause this tag not trust
+      training_feeds_hash[other_text_class] = Feed.tagged_with( TRAIN_TAGS, :any => true ).tagged_with("new_classified", :exclude => true).where(:text_class_id => TextClass.all - [main_text_class])
+
+      p "Main: #{training_feeds_hash[main_text_class].count}; Other: #{training_feeds_hash[other_text_class].count}"
     else
       text_classes.each do |text_klass|
         training_feeds_hash[text_klass] = text_klass.feeds.tagged_with( TRAIN_TAGS, :any => true )
@@ -148,7 +151,7 @@ class Classifier < ActiveRecord::Base
   # +options+ description:
   # options[:name] - name of classifier
   # For ROSE-MNB pass only one class 'cause it work by one vs all scheme
-  # +text_classes+ - should be an array
+  # +text_klasses+ - should be an array
   def self.make_from_text_classes( text_klasses, options = {} )
     raise ArgumentError if text_klasses.blank? || options[:name].blank?
 

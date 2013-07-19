@@ -24,6 +24,7 @@ class OutlierNb
   CITY = -1
   OUTLIER = 1
 
+  attr_reader :filename
   def initialize filename="outlier-rose-nb"
     @max_test_data_count = 1000
 
@@ -58,7 +59,8 @@ class OutlierNb
   def train feed
     features = feed.features_for_text_classifier
     if features.empty?
-      raise Exception
+      p ["Exception in OutlierNb", features, feed]
+      #raise Exception
     else
       klass = get_klass(feed.text_class.try(:id))
       @nb.train( features, klass )
@@ -95,21 +97,21 @@ class OutlierNb
   end
 
 
-  def save
-    FileMarshaling.marshal_save( @filename, @nb.export )
+  def save( filename = @filename )
+    FileMarshaling.marshal_save( filename, @nb.export )
   end
 
 
-  def performance
+  def performance(from_cache=true)
     max_test_data_count = @max_test_data_count
-    _, cities_test_data = FeedsHelper.get_train_and_test_feeds( :city, true )
+    _, cities_test_data = FeedsHelper.get_train_and_test_feeds( :city, from_cache )
 
     test_data_count = cities_test_data.count
     test_data_count = max_test_data_count if test_data_count > max_test_data_count
 
     cities_test_data = cities_test_data.shuffle[0...test_data_count]
 
-    outlier_data = FeedsHelper.get_train_and_test_feeds( :outlier, true )
+    outlier_data = FeedsHelper.get_train_and_test_feeds( :outlier, from_cache )
     outlier_test_data = outlier_data[0...test_data_count]
 
     confusion_matrix = { CITY => { CITY=>0, OUTLIER =>0 }, OUTLIER => { OUTLIER => 0, CITY => 0 } }
