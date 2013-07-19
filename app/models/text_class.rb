@@ -18,7 +18,7 @@
 # along with CityNews.  If not, see <http://www.gnu.org/licenses/>.
 #
 class TextClass < ActiveRecord::Base
-  attr_accessible :name
+  attr_accessible :name, :eng_name, :prepositional_name
 
   has_many :feeds
 

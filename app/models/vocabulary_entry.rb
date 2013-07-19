@@ -20,7 +20,7 @@
 class VocabularyEntry < ActiveRecord::Base  
 
   # Regexp rule may have mapping to token
-  attr_accessible :regexp_rule, :state, :token
+  attr_accessible :regexp_rule, :state, :token, :truly_city
 
   cattr_accessor :testing_mode
 
@@ -51,7 +51,7 @@ class VocabularyEntry < ActiveRecord::Base
   end
 
   #NOTE: If regexp_rule contains '\' like '\d' then need adding escape for '\' like '\\d'
-  #NOTE: Standard rules can applied into any token, Truly rules applied only for one-word token
+  #NOTE: Standard rules can applied into any token, +Truly rules+ applied only for one-word token
   #NOTE: truly_city now can be nil and its not good, `!= 't'` not give values where `is NULL`
   scope :standard_rules, where('regexp_rule is not ? and (truly_city != ? or truly_city IS NULL)', nil, true)
   #NOTE: Each truly rule for one text class should map in 1 token and truly rule has only 1 text_class
@@ -126,7 +126,7 @@ class VocabularyEntry < ActiveRecord::Base
 
 
   def token_uniqueness_for_tokens_only
-    if token && !regexp_rule && VocabularyEntry.only_tokens.pluck(:token).include?(token)
+    if changed? && token && !regexp_rule && VocabularyEntry.only_tokens.pluck(:token).include?(token)
       errors.add :token, "Should be unique"
     end
   end
