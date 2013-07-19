@@ -104,6 +104,90 @@ namespace :application do
   end
 
 
+
+  desc 'Add new city'
+  task :add_new_city => :environment do
+    add_new_city_metadata
+    make_train_and_test_sets_for_new_city
+    update_outlier_classifier
+    make_classifier_for_new_city
+  end
+
+
+  def make_classifier_for_new_city
+    text_class_name = "Белебей"
+    tc = TextClass.find_by_name( text_class_name )
+
+    classifier = Classifier.make_from_text_classes [tc], Classifier::ROSE_NAIVE_BAYES_NAME + "-#{tc.eng_name}"
+    classifier.test :feeds_count => 100, :is_random => true
+  end
+
+
+  def update_outlier_classifier
+    outlier_nb = OutlierNb.new
+    outlier_nb.preload
+    outlier_nb.save(outlier_nb.filename + "-tmp-version-#{Time.now.strftime("%s")}")
+
+    p "Outlier Nb performance before new learning"
+    p outlier_nb.performance
+
+    text_class_name = "Белебей"
+    train_feeds = TextClass.find_by_name( text_class_name ).feeds
+    train_feeds.each{ |feed| outlier_nb.train feed }
+
+    p "Outlier Nb performance after new learning"
+    p outlier_nb.performance
+
+    outlier_nb.save
+  end
+
+
+  def make_train_and_test_sets_for_new_city
+    text_class_name = "Белебей"
+    tc = TextClass.find_by_name text_class_name
+
+    feeds = Feed.search :title_or_summary_matches => 'белебе'
+    feeds.each do |feed|
+      feed.text_class.nil? ? feed.text_class = tc : feed.classified_infos.build( :text_class_id => tc.id )
+      feed.save!
+    end
+
+    train_set, test_set = FeedsHelper.get_80_20( feeds.all.shuffle )
+    train_set.each{|feed| feed.mark_list << "to_train"; feed.save!}
+    test_set.each{|feed| feed.mark_list << "dev_test"; feed.save!}
+  end
+
+
+  def add_new_city_metadata
+    text_class_name = "Белебей"
+    tc = TextClass.create :name => text_class_name, :eng_name => "Belebei", :prepositional_name => "Белебея"
+
+    ve = VocabularyEntry.new :token => text_class_name, :regexp_rule => "(белебе+[[:word:]]+)", :state => VocabularyEntry::ACCEPTED_STATE
+    ve.text_classes << tc
+    ve.save!
+
+    ve = VocabularyEntry.new :token => text_class_name, :regexp_rule => "(Белебе+[[:word:]]+|БЕЛЕБЕ+[[:word:]]+|белебе+[[:word:]]+)",
+                             :state => VocabularyEntry::ACCEPTED_STATE, :truly_city => true
+    ve.text_classes << tc
+    ve.save!
+
+    belebei_bounding_box = {:top => 54.1323, :left => 54.0626, :bottom => 54.0807, :right => 54.1557}
+    oktyabrskii_bounding_box = {:top => 54.5055, :left => 53.4323, :bottom => 54.458, :right => 53.5439}
+
+    belebei_osm = FeatureFetcher::Osm.new(belebei_bounding_box, 'belebei.osm')
+    belebei_osm.get_part_of_map
+    #okt_osm = FeatureFetcher::Osm.new(oktyabrskii_bounding_box, 'oktyabrskii.osm')
+    #okt_osm.get_part_of_map
+
+    belebei_dict = Dict.new.stem_dict belebei_osm.get_features
+    p "In Belebei Dict: #{belebei_dict.count}"
+    belebei_dict.each do |token|
+      ve = VocabularyEntry.find_or_create_by_token_and_state token, VocabularyEntry::ACCEPTED_STATE
+      ve.text_classes << tc
+    end
+  end
+
+
   def extract_new_words_and_fill_vocabulary
     re = RelationExtractor.new true
     re.iteratively_extract_patterns
