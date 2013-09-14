@@ -24,7 +24,7 @@ class FeedsController < ApplicationController
 
 
   def index
-    if params[:city]
+    if params[:city] && params[:city] != "all"
       text_class = TextClass.find_by_eng_name( params[:city].capitalize )
       @title = text_class.name if params[:city]
       @description = "Новости #{text_class.prepositional_name}."
@@ -34,6 +34,11 @@ class FeedsController < ApplicationController
     end
     @feeds = @feeds.page params[:page]
     @grouped_feeds = @feeds.where('published_at is not null').group_by{ |feed| feed.published_at.strftime("%d-%m-%Y") }
+    respond_to do |format|
+      format.html
+      format.json{ render :json => @feeds }
+      format.xml{ render :xml => @feeds }
+    end
   end
 
 
