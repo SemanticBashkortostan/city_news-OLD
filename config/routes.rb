@@ -32,11 +32,6 @@ CityNews::Application.routes.draw do
   match ':city' => 'feeds#index', :as => 'feeds_city'
   match '/' => 'feeds#index', :as => 'feeds'
 
-  unless Rails.application.config.consider_all_requests_local
-    match '*not_found', to: 'application#render_404'
-  end
-
-
   # Api section
   namespace :api do
     namespace :v1 do
@@ -48,6 +43,10 @@ CityNews::Application.routes.draw do
         
       end      
     end
+  end
+
+  unless Rails.application.config.consider_all_requests_local
+    match '*not_found', to: 'application#render_404'
   end
 
 end
