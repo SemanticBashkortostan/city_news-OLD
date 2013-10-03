@@ -1,6 +1,8 @@
 #coding: utf-8
 source 'https://rubygems.org'
 
+ruby '2.0.0'
+
 gem 'rails', '3.2.13'
 gem 'pg'
 gem 'activeadmin'
@@ -26,6 +28,7 @@ gem 'russian'
 gem 'exception_notification'
 gem 'whenever'
 
+gem 'rabl-rails'
 
 gem 'sitemap_generator'
 

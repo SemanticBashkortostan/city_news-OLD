@@ -36,4 +36,18 @@ CityNews::Application.routes.draw do
     match '*not_found', to: 'application#render_404'
   end
 
+
+  # Api section
+  namespace :api do
+    namespace :v1 do
+      resources :cities do
+        resources :news do
+        end
+      end
+      resources :news, :only => [:show, :index] do
+        
+      end      
+    end
+  end
+
 end

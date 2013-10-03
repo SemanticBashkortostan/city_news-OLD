@@ -88,6 +88,11 @@ class Feed < ActiveRecord::Base
   end
 
 
+  def rbcitynews_url
+    "http://rbcitynews.ru/feeds/#{id}"  
+  end
+
+
   def domain
     url.split("/")[2]
   end
