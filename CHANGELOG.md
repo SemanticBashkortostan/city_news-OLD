@@ -6,6 +6,7 @@ Per-release changes to Geocoder. Note that only major changes are summarized her
 1.2 (TBD)
 -------------------
 
+* Union similar news
 * Full news text fetching and show
 
 1.1 (3 Oct 2013)
