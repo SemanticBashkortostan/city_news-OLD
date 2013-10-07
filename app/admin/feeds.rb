@@ -2,7 +2,7 @@ ActiveAdmin.register Feed do
 
   filter :id
   filter :text_class
-  filter :taggings_tag_name, :as => :check_boxes, :collection => proc { Feed.mark_counts.map{|t| t.name} }
+  filter :taggings_tag_name, :as => :check_boxes, :collection => proc { ActsAsTaggableOn::Tag.all.collect{ |t| t.name } }
 
   batch_action :delete_class do |selection|
     Feed.find(selection).each do |feed|
@@ -12,8 +12,26 @@ ActiveAdmin.register Feed do
     redirect_to admin_feeds_path
   end
 
+  batch_action :add_test_tag_for_near_duplicates do |selection|
+    Feed.find(selection).each do |feed|
+      feed.mark_list << "near_duplicate_test"
+      feed.save
+    end
+    redirect_to admin_feeds_path
+  end
+
+  batch_action :delete_test_tag_for_near_duplicates do |selection|
+    Feed.find(selection).each do |feed|
+      feed.mark_list.delete "near_duplicate_test"
+      feed.save
+    end
+    redirect_to admin_feeds_path
+  end
+
+
 
   index do
+    selectable_column
     column :id
     column :title
     column :url do |feed|
