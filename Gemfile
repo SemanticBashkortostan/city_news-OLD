@@ -3,7 +3,7 @@ source 'https://rubygems.org'
 
 ruby '2.0.0'
 
-gem 'rails', '3.2.13'
+gem 'rails', '3.2.14'
 gem 'pg'
 gem 'activeadmin'
 
@@ -11,12 +11,12 @@ gem 'activerecord-postgres-hstore'
 
 gem 'jquery-rails'
 
-gem "haml", ">= 3.1.7"
-gem "bootstrap-sass", ">= 2.1.1.0"
-gem "devise", ">= 2.1.2"
-gem "cancan", ">= 1.6.8"
-gem "rolify", ">= 3.2.0"
-gem "simple_form", ">= 2.0.4"
+gem "haml", "~> 3.1.7"
+gem "bootstrap-sass", "~> 2.3.2.0"
+gem "devise", "~> 3.1.1"
+gem "cancan", "~> 1.6.8"
+gem "rolify", "~> 3.2.0"
+gem "simple_form", "~> 2.0.4"
 gem "kaminari"
 gem "feedzirra", "~> 0.2.0.rc2"
 gem "settingslogic"
@@ -36,7 +36,7 @@ gem "naive_bayes", :git => "git://github.com/sld/naive_bayes.git"
 
 gem "feedbacks", :git => "git://github.com/sld/feedbacks.git"
 
-gem 'ruby-stemmer', '>=0.8.3', :require => 'lingua/stemmer'
+gem 'ruby-stemmer', '~> 0.9.3', :require => 'lingua/stemmer'
 
 gem 'state_machine'
 

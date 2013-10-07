@@ -669,7 +669,7 @@ CREATE TABLE vocabulary_entries (
     state integer,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    truly_city boolean
+    truly_city boolean DEFAULT false
 );
 
 
@@ -1147,6 +1147,8 @@ CREATE INDEX voc_entry_tc_index ON text_classes_vocabulary_entries USING btree (
 --
 -- PostgreSQL database dump complete
 --
+
+SET search_path TO "$user",public;
 
 INSERT INTO schema_migrations (version) VALUES ('20121204064421');
 

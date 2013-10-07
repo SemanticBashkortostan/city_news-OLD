@@ -204,9 +204,9 @@ ActiveRecord::Schema.define(:version => 20130428085308) do
     t.string   "token"
     t.string   "regexp_rule"
     t.integer  "state"
-    t.datetime "created_at",  :null => false
-    t.datetime "updated_at",  :null => false
-    t.boolean  "truly_city"
+    t.datetime "created_at",                     :null => false
+    t.datetime "updated_at",                     :null => false
+    t.boolean  "truly_city",  :default => false
   end
 
   add_index "vocabulary_entries", ["state", "regexp_rule"], :name => "index_vocabulary_entries_on_state_and_regexp_rule"
