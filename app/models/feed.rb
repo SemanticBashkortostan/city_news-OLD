@@ -19,6 +19,7 @@
 #
 #coding: utf-8
 class Feed < ActiveRecord::Base
+  include FuzzyTextMatch
 
   # This constant used to make truly cities tokens more strength in features_for_classifier
   # IF it equal to 1 then it doesn't make sense
