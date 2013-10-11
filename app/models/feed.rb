@@ -100,6 +100,11 @@ class Feed < ActiveRecord::Base
   end
 
 
+  def from_news_aggregator?
+    true if domain == "news.yandex.ru"
+  end
+
+
   # Retrun all possible feature vectors for relation extraction
   def feature_vectors_for_relation_extraction()
     return [] unless text_class

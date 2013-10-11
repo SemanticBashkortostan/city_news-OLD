@@ -22,7 +22,7 @@ require 'zlib'
 
 module FuzzyTextMatch
 
-  def similar feed2
+  def similarity feed2
     feed1 = self
     prepared1 = prepare(feed1)
     prepared2 = prepare(feed2)
