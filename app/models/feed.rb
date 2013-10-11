@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with CityNews.  If not, see <http://www.gnu.org/licenses/>.
 #
-#coding: utf-8
 class Feed < ActiveRecord::Base
   include FuzzyTextMatch
 
@@ -30,6 +29,8 @@ class Feed < ActiveRecord::Base
   belongs_to :text_class
 
   acts_as_taggable_on :marks
+  # Ancestry using here to save similar feeds
+  has_ancestry
 
   has_many :classified_infos, :class_name => 'FeedClassifiedInfo', :dependent => :destroy
   has_many :classifiers, :through => :classified_infos

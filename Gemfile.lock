@@ -61,6 +61,8 @@ GEM
     acts-as-taggable-on (2.4.1)
       rails (>= 3, < 5)
     addressable (2.3.5)
+    ancestry (2.0.0)
+      activerecord (>= 3.0.0)
     arbre (1.0.1)
       activesupport (>= 3.0.0)
     arel (3.0.2)
@@ -305,6 +307,7 @@ DEPENDENCIES
   activeadmin
   activerecord-postgres-hstore
   acts-as-taggable-on
+  ancestry
   bootstrap-sass (~> 2.3.2.0)
   cancan (~> 1.6.8)
   capistrano

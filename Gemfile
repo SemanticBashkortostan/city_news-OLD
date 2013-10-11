@@ -1,4 +1,3 @@
-#coding: utf-8
 source 'https://rubygems.org'
 
 ruby '2.0.0'
@@ -8,6 +7,8 @@ gem 'pg'
 gem 'activeadmin'
 
 gem 'activerecord-postgres-hstore'
+
+gem 'ancestry'
 
 gem 'jquery-rails'
 
