@@ -44,6 +44,8 @@ module FuzzyTextMatch
 
   # Test without stemming and with stemming
   def normalize!(word)
-    word
+    stemmer= Lingua::Stemmer.new(:language => "ru")
+    normalized = stemmer.stem( word ).mb_chars.downcase.to_s
+    return normalized
   end
 end
