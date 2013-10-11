@@ -1,0 +1,11 @@
+= link_to @feed.title.try(:html_safe), '#', :class => :entry
+- if @feed.summary
+  %p
+    = @feed.summary.html_safe
+
+= link_to "Источник", feeds_goto_path( :url => @feed.url )
+
+%div.similars
+  - @feed.descendants.each do |child|
+    = link_to child.title.try(:html_safe), feed_path(child), :class => :entry
+    = child.published_at.strftime("%d-%m-%Y")

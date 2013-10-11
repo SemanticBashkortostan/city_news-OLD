@@ -30,7 +30,8 @@ CityNews::Application.routes.draw do
 
   match '/goto' => 'feeds#goto', :as => 'feeds_goto'
   match ':city' => 'feeds#index', :as => 'feeds_city'
-  match '/' => 'feeds#index', :as => 'feeds'
+
+  resources :feeds, only: [:show, :index]
 
   # Api section
   namespace :api do
