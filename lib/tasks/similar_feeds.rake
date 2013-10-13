@@ -1,3 +1,4 @@
+#coding: utf-8
 #
 # CityNews - news aggregator software
 # Copyright (C) 2013  Idris Yusupov
@@ -17,29 +18,13 @@
 # You should have received a copy of the GNU General Public License
 # along with CityNews.  If not, see <http://www.gnu.org/licenses/>.
 #
-require 'clockwork'
 
-require File.expand_path('../../config/environment', __FILE__)
-require "#{Rails.root}/lib/scheduler/classifier"
-require "#{Rails.root}/lib/scheduler/production_feeds_fetcher"
-require "#{Rails.root}/lib/scheduler/similar_feeds"
+namespace :similar_feeds do
+  task :init_prepare do
+    Scheduler::SimilarFeeds.new.init_perform
+  end
 
-include Clockwork
-
-
-every(3.minutes, 'production_feeds:fetch_and_classify') do
-  Scheduler::ProductionFeedsFetcher.new.fetch_and_classify
+  task :try_to_similar_last_feeds do
+    Scheduler::SimilarFeeds.new.perform_last_feeds
+  end
 end
-
-
-every(10.minutes, 'production_feeds:try_to_similar_feeds') do
-  Scheduler::SimilarFeeds.new.perform_last_feeds
-end
-
-
-#
-#every(31.minutes, 'classifier:train_by_production_data') do
-#  #Scheduler::Classifier.train_by_production_data
-#end
-
-#TODO: Add Sitemap generation
