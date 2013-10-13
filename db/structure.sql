@@ -349,8 +349,8 @@ CREATE TABLE feeds (
     text_class_id integer,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    ancestry character varying(255),
-    similar_score double precision
+    similar_score double precision,
+    ancestry character varying(255)
 );
 
 
