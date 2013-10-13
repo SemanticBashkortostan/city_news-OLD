@@ -1,11 +1,27 @@
-= link_to @feed.title.try(:html_safe), '#', :class => :entry
+%p
+  %em= @feed.published_at.strftime("%d-%m-%Y %H:%M")
+
+%h4= @feed.title.try(:html_safe)
 - if @feed.summary
-  %p
-    = @feed.summary.html_safe
+  %blockquote
+    %p
+      = @feed.summary.html_safe
+    %small= link_to "Источник", feeds_goto_path( :url => @feed.url ), :class => 'muted news_source text-right'
 
-= link_to "Источник", feeds_goto_path( :url => @feed.url )
 
-%div.similars
-  - @feed.descendants.each do |child|
-    = link_to child.title.try(:html_safe), feed_path(child), :class => :entry
-    = child.published_at.strftime("%d-%m-%Y")
+- if @feed.descendants.present?
+  %div.similars
+    %p.text-success Похожие новости:
+    %ul
+      - @feed.descendants.each do |child|
+        %li
+          = link_to child.title.try(:html_safe), feed_path(child), :class => :entry
+          %em= child.published_at.strftime("%d-%m-%Y %H:%M")
+
+:javascript
+  $(document).ready(function() {
+    $("a.news_source").click(function(){
+      window.open($(this).attr('href'));
+      return false;
+    });
+  });

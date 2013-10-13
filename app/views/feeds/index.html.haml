@@ -6,21 +6,11 @@
   - entries.each do |entry|
     %span.city= link_to entry.text_class.name, feeds_city_path( :city => entry.text_class.eng_name.downcase ) if params[:city].blank?
     = link_to entry.title.try(:html_safe), feed_path(entry), :class => :entry
+    - if entry.descendants.count > 0
+      %span{:title => "Количество похожих новостей", :class  => "badge"}= entry.descendants.count
     - if entry.summary
       %p 
         = entry.summary[0..500].html_safe
         = "..." if entry.summary.length > 500
-    %br
-    %div.duplicate_count Похожих новостей: <strong>#{entry.descendants.count}</strong>
-
 
 = paginate @feeds
-
-
-:javascript
-  $(document).ready(function() {
-    $("a.entry").click(function(){
-      window.open($(this).attr('href'));
-      return false;
-    });
-  });
