@@ -29,7 +29,7 @@ class Feed < ActiveRecord::Base
   belongs_to :text_class
 
   acts_as_taggable_on :marks
-  # Ancestry using here to save similar feeds
+
   has_ancestry
 
   has_many :classified_infos, :class_name => 'FeedClassifiedInfo', :dependent => :destroy
@@ -132,6 +132,12 @@ class Feed < ActiveRecord::Base
     feature_vector
   end
 
+
+  @@temp_storage_for_similars ||= {}
+  #TODO: Replace to hstore to be not temporary
+  def temp_storage_for_similars
+    return @@temp_storage_for_similars
+  end
 
 
   protected

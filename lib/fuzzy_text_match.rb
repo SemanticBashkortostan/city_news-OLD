@@ -24,8 +24,13 @@ module FuzzyTextMatch
 
   def similarity feed2
     feed1 = self
-    prepared1 = prepare(feed1)
-    prepared2 = prepare(feed2)
+    begin
+      prepared1 = prepare(feed1)
+      prepared2 = prepare(feed2)
+    rescue ArgumentError => e
+      Rails.logger.error "#{e} with feeds_ids[#{feed1.id}, #{feed2.id}]"
+      return 0.0
+    end
 
     if prepared1[:doc_crc] == prepared2[:doc_crc]
       return 1.0
@@ -36,16 +41,26 @@ module FuzzyTextMatch
   end
 
 
+  def temp_storage_for_similars
+    {}
+  end
+
+
   private
 
 
   def prepare feed
-    text = (feed.title.split.count > 3 ? feed.title : feed.summary)
+    return temp_storage_for_similars[feed.id] if temp_storage_for_similars[feed.id]
+    text = (good_words(title).count > 4 ? feed.title : feed.summary)
+
+    raise( ArgumentError, "text cant be blank!" ) if text.blank?
 
     words = extract_and_normalize_15_good_words text
 
-    { :doc_crc => doc_crc = Zlib::crc32(text), :words_crc => words.map{ |word| Zlib::crc32(word) }.to_set,
-      :good_words_count => good_words(text).count }
+    temp_storage_for_similars[feed.id] = { :doc_crc => doc_crc = Zlib::crc32(text),
+                               :words_crc => words.map{ |word| Zlib::crc32(word) }.to_set,
+                               :good_words_count => good_words(text).count }
+    return temp_storage_for_similars[feed.id]
   end
 
 
