@@ -27,7 +27,7 @@ class Scheduler::SimilarFeeds
   def init_perform
     feeds_by_month_and_text_class = Feed.where(text_class_id: @text_classes, ancestry: nil).
       where('published_at > ?', 3000.days.ago).order('published_at desc').
-      group_by{|feed| [feed.text_class_id, feed.published_at.strftime("%Y-%m")]}
+      group_by{|feed| [feed.text_class_id, feed.published_at.strftime("%Y-%m-%d")]}
 
     ActiveRecord::Base.transaction do
       feeds_by_month_and_text_class.each do |group, feeds|
@@ -55,7 +55,7 @@ class Scheduler::SimilarFeeds
     last_feeds ||= Feed.where('published_at > ?', 10.minutes.ago).
         where(text_class_id: @text_classes, ancestry: nil).order('published_at desc').all
     compare_feeds = Feed.where(text_class_id: @text_classes).
-          where('published_at > ?', 20.days.ago).order('published_at desc').all - last_feeds
+          where('published_at > ?', 2.days.ago).order('published_at desc').all - last_feeds
 
     ActiveRecord::Base.transaction do
       for i in 0...last_feeds.count

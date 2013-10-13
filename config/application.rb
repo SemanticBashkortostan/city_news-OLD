@@ -31,6 +31,7 @@ module CityNews
     # config.autoload_paths += %W(#{config.root}/extras)
     config.autoload_paths += %W(#{config.root}/lib)
     config.autoload_paths += %W(#{config.root}/lib/*/)
+    config.autoload_paths += %W(#{config.root}/lib/scheduler/*/)
 
 
     # Only load the plugins named here, in the order given (default is alphabetical).
