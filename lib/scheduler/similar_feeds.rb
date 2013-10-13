@@ -19,24 +19,30 @@
 #
 class Scheduler::SimilarFeeds
 
+  def initialize
+    @text_classes = TextClass.find_by_name "Уфа"
+  end
 
-  def self.perform
-    feeds_by_month_and_text_class = Feed.where(text_class_id: TextClass.all, ancestry: nil).
+  def perform
+    feeds_by_month_and_text_class = Feed.where(text_class_id: @text_classes, ancestry: nil).
+      where('published_at > ?', 40.days.ago).order('published_at desc').
       group_by{|feed| [feed.text_class_id, feed.published_at.strftime("%Y-%m")]}
 
-    feeds_by_month_and_text_class.each do |group, feeds|
-      by_feeds = feeds.dup
-      for i in 0...feeds.count
-        for j in i+1...by_feeds.count
-          next unless by_feeds[j]
+    ActiveRecord::Base.transaction do
+      feeds_by_month_and_text_class.each do |group, feeds|
+        by_feeds = feeds.dup
+        for i in 0...feeds.count
+          for j in i+1...by_feeds.count
+            next unless by_feeds[j]
 
-          similar_score = feeds[i].similarity(by_feeds[j])
-          if similar_score >= 0.8
-            set_children_to_feed(feeds[i], by_feeds[j], similar_score, false)
-          elsif similar_score > 0.4
-            set_children_to_feed(feeds[i], by_feeds[j], similar_score, true)
+            similar_score = feeds[i].similarity(by_feeds[j])
+            if similar_score > 0.84
+              set_children_to_feed(feeds[i], by_feeds[j], similar_score, false)
+            elsif similar_score >= 0.7
+              set_children_to_feed(feeds[i], by_feeds[j], similar_score, true)
+            end
+
           end
-
         end
       end
     end
@@ -44,7 +50,7 @@ class Scheduler::SimilarFeeds
   end
 
 
-  def self.set_children_to_feed feed_similar1, feed_similar2, similar_score, only_greater
+  def set_children_to_feed feed_similar1, feed_similar2, similar_score, only_greater
     if only_greater == false || (only_greater && feed_similar2.similar_score.to_f < similar_score)
       feed_similar2.similar_score = similar_score
       feed_similar2.parent = feed_similar1
