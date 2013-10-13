@@ -1,5 +1,7 @@
+= page_title @title
+
 %p
-  %em= @feed.published_at.strftime("%d-%m-%Y %H:%M")
+  %em= Russian.strftime(@feed.published_at, "%d %B %Y, %H:%M")
 
 %h4= @feed.title.try(:html_safe)
 - if @feed.summary
@@ -8,7 +10,6 @@
       = @feed.summary.html_safe
     %small= link_to "Источник", feeds_goto_path( :url => @feed.url ), :class => 'muted news_source text-right'
 
-
 - if @feed.descendants.present?
   %div.similars
     %p.text-success Похожие новости:
@@ -16,7 +17,7 @@
       - @feed.descendants.each do |child|
         %li
           = link_to child.title.try(:html_safe), feed_path(child), :class => :entry
-          %em= child.published_at.strftime("%d-%m-%Y %H:%M")
+          %em= Russian.strftime(child.published_at, "%d %B %Y, %H:%M")
 
 :javascript
   $(document).ready(function() {

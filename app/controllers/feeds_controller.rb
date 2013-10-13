@@ -27,14 +27,14 @@ class FeedsController < ApplicationController
     scope = Feed
     if params[:city] && params[:city] != "all"
       text_class = TextClass.find_by_eng_name( params[:city].capitalize )
-      @title = text_class.name if params[:city]
+      @title = text_class.name
       @description = "Новости #{text_class.prepositional_name}."
       scope = scope.with_text_klass( text_class.id ).order 'published_at desc'
     else
       scope = scope.includes(:text_class).where('text_class_id is not null').order 'published_at desc'
     end
     @feeds = scope.roots.page params[:page]
-    @grouped_feeds = @feeds.where('published_at is not null').group_by{ |feed| feed.published_at.strftime("%d-%m-%Y") }
+    @grouped_feeds = @feeds.roots.where('published_at is not null').group_by{ |feed| feed.published_at.strftime("%d-%m-%Y") }
     respond_to do |format|
       format.html
       format.json{ render :json => @feeds }
@@ -45,11 +45,21 @@ class FeedsController < ApplicationController
 
   def show
     @feed = Feed.find params[:id]
+    set_active_menu_item
+    @title = @feed.text_class.name
   end
 
 
   def goto
     redirect_to params[:url]
+  end
+
+
+  protected
+
+
+  def set_active_menu_item
+    params[:city] = @feed.text_class.eng_name.downcase
   end
 
 end
