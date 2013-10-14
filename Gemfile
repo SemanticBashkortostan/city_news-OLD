@@ -29,6 +29,8 @@ gem 'russian'
 gem 'exception_notification'
 gem 'whenever'
 
+gem 'honeybadger'
+
 gem 'rabl-rails'
 
 gem 'sitemap_generator'
