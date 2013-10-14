@@ -55,12 +55,12 @@ class Scheduler::SimilarFeeds
     last_feeds ||= Feed.where('published_at > ?', 10.minutes.ago).
         where(text_class_id: @text_classes, ancestry: nil).order('published_at desc').all
     compare_feeds = Feed.where(text_class_id: @text_classes).
-          where('published_at > ?', 2.days.ago).order('published_at desc').all - last_feeds
+          where('published_at > ?', 2.days.ago).order('published_at desc').all
 
     ActiveRecord::Base.transaction do
       for i in 0...last_feeds.count
         for j in i+1...compare_feeds.count
-          next unless compare_feeds[j]
+          next if !compare_feeds[j] || last_feeds[i].id == compare_feeds[j].id
 
           similar_score = last_feeds[i].similarity(compare_feeds[j])
           if similar_score > 0.84

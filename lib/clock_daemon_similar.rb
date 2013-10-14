@@ -17,18 +17,13 @@
 # You should have received a copy of the GNU General Public License
 # along with CityNews.  If not, see <http://www.gnu.org/licenses/>.
 #
-require 'clockwork'
+require 'daemons'
 
-require File.expand_path('../../config/environment', __FILE__)
-require "#{Rails.root}/lib/scheduler/classifier"
-require "#{Rails.root}/lib/scheduler/production_feeds_fetcher"
+ENV["APP_ROOT"] ||= File.expand_path("#{File.dirname(__FILE__)}/..") 
 
+Daemons.run_proc("clock_similar") do
+  Dir.chdir(ENV["APP_ROOT"])
 
-include Clockwork
-
-
-every(3.minutes, 'production_feeds:fetch_and_classify') do
-  Scheduler::ProductionFeedsFetcher.new.fetch_and_classify
+  require "#{ENV["APP_ROOT"]}/lib/clock_similar.rb"
+  Clockwork::run  
 end
-
-#TODO: Add Sitemap generation

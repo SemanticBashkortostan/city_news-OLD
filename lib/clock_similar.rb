@@ -20,15 +20,11 @@
 require 'clockwork'
 
 require File.expand_path('../../config/environment', __FILE__)
-require "#{Rails.root}/lib/scheduler/classifier"
-require "#{Rails.root}/lib/scheduler/production_feeds_fetcher"
-
+require "#{Rails.root}/lib/scheduler/similar_feeds"
 
 include Clockwork
 
 
-every(3.minutes, 'production_feeds:fetch_and_classify') do
-  Scheduler::ProductionFeedsFetcher.new.fetch_and_classify
+every(10.minutes, 'production_feeds:try_to_similar') do
+  Scheduler::SimilarFeeds.new.perform_last_feeds
 end
-
-#TODO: Add Sitemap generation
