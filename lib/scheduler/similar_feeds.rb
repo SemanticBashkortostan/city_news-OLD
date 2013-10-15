@@ -51,8 +51,8 @@ class Scheduler::SimilarFeeds
   end
 
 
-  def perform_last_feeds last_feeds = nil
-    last_feeds_scope ||= Feed.where('published_at > ?', 30.minutes.ago).
+  def perform_last_feeds last_feeds_scope = nil
+    last_feeds_scope ||= Feed.where('created_at > ?', 30.minutes.ago).
         where(text_class_id: @text_classes, ancestry: nil).order('published_at desc')
     compare_feeds_scope = Feed.where(text_class_id: @text_classes).
           where('published_at > ?', 2.days.ago).order('published_at desc')
