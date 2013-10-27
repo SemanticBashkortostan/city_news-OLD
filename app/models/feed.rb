@@ -248,7 +248,9 @@ class Feed < ActiveRecord::Base
 
 
   def set_default_published_at
-    self.published_at ||= Time.now - 30.minutes
+    if !self.published_at || self.published_at > (Time.now + 7.minutes)
+      self.published_at = Time.now - 7.minutes
+    end
   end
 
 end
