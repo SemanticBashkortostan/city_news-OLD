@@ -56,6 +56,7 @@ class Scheduler::ProductionFeedsFetcher
         end
       rescue Exception => e 
         p ["Error in production_feeds:fetch_outlier_feeds #{path}", e]
+        Honeybadger.notify e
       end    
     end
   end
@@ -82,6 +83,7 @@ class Scheduler::ProductionFeedsFetcher
         str = ["Error in production_feeds:fetch_and_classify #{path}", e]
         p str
         BayesLogger.bayes_logger.error str
+        Honeybadger.notify e
         raise Exception if Rails.env == "development"
       end
     end

@@ -54,8 +54,7 @@ class ApplicationController < ActionController::Base
 
 
   def notify(exception)
-    ExceptionNotifier::Notifier.exception_notification(request.env, exception,
-      data: {message: 'an error happened'}).deliver
+    Honeybadger.notify exception
   end
 
 
