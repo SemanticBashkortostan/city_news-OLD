@@ -17,9 +17,17 @@ class Api::V1::NewsController < Api::V1::BaseController
     if params[:city_id].present?
       scope = scope.where(:text_class_id => params[:city_id])
     end
+
+    if params[:only_roots]
+      scope = scope.where('ancestry is ?', nil)
+    end
     
     @news = scope.page(params[:page]).per(params[:per_page]).order("published_at desc")
     @pages_data = { :per_page => params[:per_page], :pages_count => @news.total_pages, :current_page => params[:page] }
+  end
+
+  def show
+    @news_entry = Feed.find_by_id params[:id]
   end
 
 end

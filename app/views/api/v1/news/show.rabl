@@ -1,10 +1,6 @@
-object @news
+object @news_entry
 
-node(:per_page) {|m| @pages_data[:per_page] }
-node(:pages_count) {|m| @pages_data[:pages_count]}
-node(:current_page) {|m| @pages_data[:current_page]}
-
-child :@news do
+child :@news_entry do
   attributes :id, :title, :summary, :published_at, :rbcitynews_url
   attributes :url => :legacy_url, :text_class_id => :city_id
   attributes :has_children? => :has_similar_news
