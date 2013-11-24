@@ -22,7 +22,7 @@ class Scheduler::ProductionFeedsFetcher
 
   def create_production_feed entry, options = {}, only_new=false
     params = {
-               :title => entry.title, :url => entry.url, :summary => entry.summary,
+               :title => entry.title[0...255], :url => entry.url, :summary => entry.summary,
                :published_at => Time.local( entry.published.year, entry.published.month, entry.published.day, entry.published.hour, entry.published.min ),
                :mark_list => ["fetched", "production"]
              }.merge( options )
