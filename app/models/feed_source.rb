@@ -26,6 +26,6 @@ class FeedSource < ActiveRecord::Base
 
 
   def available?
-    Feedzirra::Feed.fetch_and_parse( url )        
+    Feedzirra::Feed.fetch_and_parse( url ).nil?
   end
 end
