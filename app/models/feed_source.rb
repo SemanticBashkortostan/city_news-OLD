@@ -23,4 +23,9 @@ class FeedSource < ActiveRecord::Base
   belongs_to :text_class
 
   validates :url, :uniqueness => true
+
+
+  def available?
+    Feedzirra::Feed.fetch_and_parse( url )        
+  end
 end
