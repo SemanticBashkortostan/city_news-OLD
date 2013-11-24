@@ -54,7 +54,7 @@ class ApplicationController < ActionController::Base
 
 
   def notify(exception)
-    Honeybadger.notify exception
+    notify_honeybadger(exception)
   end
 
 
