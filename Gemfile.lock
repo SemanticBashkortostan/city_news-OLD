@@ -9,7 +9,8 @@ GIT
 
 GIT
   remote: git://github.com/sld/naive_bayes.git
-  revision: 5fcedbcc1f86111e06b681d2e3c2146e7ad29fba
+  revision: 3def7f1861dd7370fa10e6351216662a3b980117
+  ref: 3def7f1861dd7370fa10e6351216662a3b980117
   specs:
     naive_bayes (0.0.1)
 

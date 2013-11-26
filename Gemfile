@@ -34,7 +34,7 @@ gem 'rabl-rails'
 
 gem 'sitemap_generator'
 
-gem "naive_bayes", :git => "git://github.com/sld/naive_bayes.git"
+gem "naive_bayes", :git => "git://github.com/sld/naive_bayes.git", :ref => '3def7f1861dd7370fa10e6351216662a3b980117'
 
 gem "feedbacks", :git => "git://github.com/sld/feedbacks.git"
 
