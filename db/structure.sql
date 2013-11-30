@@ -350,7 +350,8 @@ CREATE TABLE feeds (
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     similar_score double precision,
-    ancestry character varying(255)
+    ancestry character varying(255),
+    feed_source_id integer
 );
 
 
@@ -1042,10 +1043,24 @@ CREATE INDEX index_feed_sources_on_text_class_id ON feed_sources USING btree (te
 
 
 --
+-- Name: index_feed_sources_on_url; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_feed_sources_on_url ON feed_sources USING btree (url);
+
+
+--
 -- Name: index_feeds_on_ancestry; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE INDEX index_feeds_on_ancestry ON feeds USING btree (ancestry);
+
+
+--
+-- Name: index_feeds_on_feed_source_id; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_feeds_on_feed_source_id ON feeds USING btree (feed_source_id);
 
 
 --
@@ -1218,3 +1233,7 @@ INSERT INTO schema_migrations (version) VALUES ('20130426063801');
 INSERT INTO schema_migrations (version) VALUES ('20130428085308');
 
 INSERT INTO schema_migrations (version) VALUES ('20131011184441');
+
+INSERT INTO schema_migrations (version) VALUES ('20131130090159');
+
+INSERT INTO schema_migrations (version) VALUES ('20131130094218');

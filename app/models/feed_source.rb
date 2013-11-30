@@ -21,11 +21,17 @@ class FeedSource < ActiveRecord::Base
   attr_accessible :text_class_id, :url
 
   belongs_to :text_class
+  has_many :feeds
 
   validates :url, :uniqueness => true
 
 
   def available?
     !Feedzirra::Feed.fetch_and_parse( url ).nil?
+  end
+
+
+  def domain
+    url.split("/")[2]
   end
 end

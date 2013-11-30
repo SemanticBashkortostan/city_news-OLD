@@ -27,6 +27,7 @@ class Feed < ActiveRecord::Base
   attr_accessible :published_at, :summary, :text_class_id, :title, :url, :text_class, :mark_list
 
   belongs_to :text_class
+  belongs_to :feed_source
 
   acts_as_taggable_on :marks
 
@@ -45,7 +46,7 @@ class Feed < ActiveRecord::Base
 
   before_validation :convert_if_punycode_url
   before_save :strip_html_tags
-  before_save :set_default_published_at
+  before_save :set_default_published_at, :set_feed_source
 
 
   def self.fetched_trainers( cnt, text_classes, cl_id )
@@ -251,6 +252,11 @@ class Feed < ActiveRecord::Base
     if !self.published_at || self.published_at > (Time.now + 7.minutes)
       self.published_at = Time.now - 7.minutes
     end
+  end
+
+
+  def set_feed_source    
+    self.feed_source_id = FeedSource.where("url like '%#{domain}%'").first.try(:id)    
   end
 
 end
