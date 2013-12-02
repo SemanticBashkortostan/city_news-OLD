@@ -35,7 +35,8 @@ CityNews::Application.routes.draw do
 
 
   match 'content_extraction/index' => 'content_extraction#index' 
-  match 'content_extraction/extract' => 'content_extraction#extract' 
+  match 'content_extraction/extract' => 'content_extraction#extract'
+  match 'content_extraction/extractable_feed_source' => 'content_extraction#extractable_feed_source'
 
 
   # Api section

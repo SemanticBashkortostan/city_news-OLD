@@ -279,7 +279,9 @@ CREATE TABLE feed_sources (
     text_class_id integer,
     url character varying(255),
     created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL,
+    extractable_main_content boolean,
+    active boolean DEFAULT true
 );
 
 
@@ -351,7 +353,8 @@ CREATE TABLE feeds (
     updated_at timestamp without time zone NOT NULL,
     similar_score double precision,
     ancestry character varying(255),
-    feed_source_id integer
+    feed_source_id integer,
+    main_html_content text
 );
 
 
@@ -1036,6 +1039,20 @@ CREATE INDEX index_feed_classified_infos_on_feed_id_and_classifier_id ON feed_cl
 
 
 --
+-- Name: index_feed_sources_on_active; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_feed_sources_on_active ON feed_sources USING btree (active);
+
+
+--
+-- Name: index_feed_sources_on_extractable_main_content; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_feed_sources_on_extractable_main_content ON feed_sources USING btree (extractable_main_content);
+
+
+--
 -- Name: index_feed_sources_on_text_class_id; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -1237,3 +1254,5 @@ INSERT INTO schema_migrations (version) VALUES ('20131011184441');
 INSERT INTO schema_migrations (version) VALUES ('20131130090159');
 
 INSERT INTO schema_migrations (version) VALUES ('20131130094218');
+
+INSERT INTO schema_migrations (version) VALUES ('20131202180430');

@@ -2,8 +2,16 @@
 
 = form_tag 'extract', method: :get do 
   = label_tag :feed_source
-  = select_tag :feed_source, options_from_collection_for_select(@feed_sources, :id, :url)
+  = select_tag :feed_source, options_from_collection_for_select(@feed_sources, :id, :url, params[:feed_source])
   = submit_tag "Try!"
+
+= form_tag 'extractable_feed_source', method: :post do
+  = select_tag :feed_source, options_from_collection_for_select(@feed_sources, :id, :url, params[:feed_source])
+  = submit_tag "Set as Extractable"
+
+- if @feed_source
+  %p= @feed_source.domain
+  %p= @feed_source.extractable_main_content
 
 - if @feed
   %p= @feed.id
@@ -11,7 +19,7 @@
 
 - if @content.present?
   %h2 Main Html
-  = @content["main_html_content"].html_safe
+  = @content["main_html_content"]
   %br
   %h2 Full Html
   = @content["full_html"]
