@@ -7,8 +7,12 @@
 - if @feed.summary
   %blockquote
     %p
-      = @feed.summary.html_safe
-    %small= link_to "Источник", feeds_goto_path( :url => @feed.url ), :class => 'muted news_source text-right'
+      %em{:class => 'text-info'}= @feed.summary.html_safe
+
+%blockquote
+  - if @feed.main_html_content
+    %p= @feed.main_html_content.html_safe
+  %small= link_to "Источник", feeds_goto_path( :url => @feed.url ), :class => 'muted news_source text-right text-info'
 
 - if @feed.descendants.present?
   %div.similars
