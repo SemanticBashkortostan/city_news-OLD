@@ -64,7 +64,7 @@ class Scheduler::ProductionFeedsFetcher
 
   def fetch
     max_fetched = 20
-    paths = FeedSource.pluck(:url)
+    paths = FeedSource.active.pluck(:url)
     feed = Feedzirra::Feed.fetch_and_parse( paths )
     paths.each do |path|
       begin
@@ -72,6 +72,7 @@ class Scheduler::ProductionFeedsFetcher
         tmp_feeds = make_tmp_feeds( feed[path].entries )
         outlier_and_goods = get_outlier_and_goods( tmp_feeds )
         outlier_and_goods[:good].each do |feed|
+          @feed_url = feed.url  # To resolve issue in Honeybadger
           fetched += 1 if feed.save           
           break if fetched >= max_fetched
         end
@@ -83,6 +84,7 @@ class Scheduler::ProductionFeedsFetcher
         str = ["Error in production_feeds:fetch_and_classify #{path}", e]
         p str
         BayesLogger.bayes_logger.error str
+        Honeybadger.context(feed_source_path: path, feed_url: @feed_url)
         Honeybadger.notify e
         raise Exception if Rails.env == "development"
       end

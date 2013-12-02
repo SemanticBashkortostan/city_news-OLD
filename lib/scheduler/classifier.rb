@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with CityNews.  If not, see <http://www.gnu.org/licenses/>.
 #
+
+
 # Classifier's wrapper which runs in clock daemon by schedule
 class Scheduler::Classifier
   def self.classify_fetched

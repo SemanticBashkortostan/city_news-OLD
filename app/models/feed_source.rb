@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with CityNews.  If not, see <http://www.gnu.org/licenses/>.
 #
+
+
 class FeedSource < ActiveRecord::Base
   attr_accessible :text_class_id, :url
 
@@ -24,6 +26,8 @@ class FeedSource < ActiveRecord::Base
   has_many :feeds
 
   validates :url, :uniqueness => true
+
+  scope :active, where(:active => true)
 
 
   def available?
