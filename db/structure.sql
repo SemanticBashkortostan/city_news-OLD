@@ -345,7 +345,7 @@ ALTER SEQUENCE feedbacks_feedbacks_id_seq OWNED BY feedbacks_feedbacks.id;
 CREATE TABLE feeds (
     id integer NOT NULL,
     title character varying(255),
-    url character varying(255),
+    url text,
     summary text,
     published_at timestamp without time zone,
     text_class_id integer,
@@ -1256,3 +1256,5 @@ INSERT INTO schema_migrations (version) VALUES ('20131130090159');
 INSERT INTO schema_migrations (version) VALUES ('20131130094218');
 
 INSERT INTO schema_migrations (version) VALUES ('20131202180430');
+
+INSERT INTO schema_migrations (version) VALUES ('20131202183320');

@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with CityNews.  If not, see <http://www.gnu.org/licenses/>.
 #
+
 class Scheduler::SimilarFeeds
 
   def initialize

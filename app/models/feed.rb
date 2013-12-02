@@ -44,6 +44,13 @@ class Feed < ActiveRecord::Base
   scope :unclassified_fetched, tagged_with(["fetched", "production"], :match_all => true).without_uncorrect_tags.where(:text_class_id => nil)
   scope :was_trainers, lambda{ |classifier_id| includes(:classifiers).where(:classifiers_feeds => {:classifier_id => classifier_id}) }
 
+  scope :without_main_content, where(:main_html_content => nil)
+  scope :with_any_text_class, where('feeds.text_class_id IS NOT NULL')
+  scope :with_active_feed_source, includes(:feed_source).where(:feed_sources => {:active => true})
+  scope :with_extractable_main_content_feed_source, includes(:feed_source).
+        where( :feed_sources => {:extractable_main_content => true} )
+
+
   before_validation :convert_if_punycode_url
   before_save :strip_html_tags
   before_save :set_default_published_at, :set_feed_source
