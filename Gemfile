@@ -42,6 +42,8 @@ gem 'ruby-stemmer', '~> 0.9.3', :require => 'lingua/stemmer'
 
 gem 'state_machine'
 
+gem 'activeresource'
+
 
 group :assets do
   gem 'sass-rails',   '~> 3.2.3'

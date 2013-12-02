@@ -1,0 +1,17 @@
+%h1 Тестирование City Content Extractor
+
+= form_tag 'extract', method: :get do 
+  = label_tag :feed_source
+  = select_tag :feed_source, options_from_collection_for_select(@feed_sources, :id, :url)
+  = submit_tag "Try!"
+
+- if @feed
+  %p= @feed.id
+  %p= @feed.url
+
+- if @content.present?
+  %h2 Main Html
+  = @content["main_html_content"].html_safe
+  %br
+  %h2 Full Html
+  = @content["full_html"]

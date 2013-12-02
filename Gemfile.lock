@@ -309,6 +309,7 @@ PLATFORMS
 DEPENDENCIES
   activeadmin
   activerecord-postgres-hstore
+  activeresource
   acts-as-taggable-on
   ancestry
   bootstrap-sass (~> 2.3.2.0)

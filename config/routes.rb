@@ -33,6 +33,11 @@ CityNews::Application.routes.draw do
 
   resources :feeds, only: [:show, :index]
 
+
+  match 'content_extraction/index' => 'content_extraction#index' 
+  match 'content_extraction/extract' => 'content_extraction#extract' 
+
+
   # Api section
   namespace :api do
     namespace :v1 do
