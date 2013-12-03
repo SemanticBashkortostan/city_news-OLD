@@ -263,7 +263,7 @@ class Feed < ActiveRecord::Base
 
 
   def set_feed_source    
-    self.feed_source_id = FeedSource.where("url like '%#{domain}%'").first.try(:id)    
+    self.feed_source_id ||= FeedSource.where("url like '%#{domain}%'").first.try(:id)
   end
 
 end

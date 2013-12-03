@@ -15,6 +15,8 @@ ActiveAdmin.register FeedSource do
     column :id
     column :updated_at
     column :url
+    column :active
+    column :extractable_main_content
     actions defaults: true do |feed_source|
       link_to 'Is available?', check_availibility_admin_feed_source_path(feed_source), :method => :put
     end
