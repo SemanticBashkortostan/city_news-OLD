@@ -17,16 +17,13 @@
 # You should have received a copy of the GNU General Public License
 # along with CityNews.  If not, see <http://www.gnu.org/licenses/>.
 #
-require 'clockwork'
+require 'daemons'
 
-require File.expand_path('../../config/environment', __FILE__)
-require "#{Rails.root}/lib/scheduler/similar_feeds"
+ENV["APP_ROOT"] ||= File.expand_path("#{File.dirname(__FILE__)}/..")
 
+Daemons.run_proc("clock_main_content") do
+  Dir.chdir(ENV["APP_ROOT"])
 
-include Clockwork
-
-
-every(5.minutes, 'production_feeds:try_to_similar') do
-  Scheduler::SimilarFeeds.new.perform_last_feeds
+  require "#{ENV["APP_ROOT"]}/lib/clock_main_content.rb"
+  Clockwork::run
 end
-

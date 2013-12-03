@@ -20,13 +20,12 @@
 require 'clockwork'
 
 require File.expand_path('../../config/environment', __FILE__)
-require "#{Rails.root}/lib/scheduler/similar_feeds"
+require "#{Rails.root}/lib/scheduler/main_content_fetcher"
 
 
 include Clockwork
 
 
-every(5.minutes, 'production_feeds:try_to_similar') do
-  Scheduler::SimilarFeeds.new.perform_last_feeds
+every(10.minutes, 'production_feeds:fetch_main_content') do
+  Scheduler::MainContentFetcher.new(100).fetch_and_set_main_content_to_feeds
 end
-
