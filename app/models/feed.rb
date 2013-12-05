@@ -52,8 +52,8 @@ class Feed < ActiveRecord::Base
 
 
   before_validation :convert_if_punycode_url
-  before_save :strip_html_tags
-  before_save :set_default_published_at, :set_feed_source
+  before_save :strip_html_tags, :set_default_published_at  
+  before_create :set_feed_source
 
 
   def self.fetched_trainers( cnt, text_classes, cl_id )
