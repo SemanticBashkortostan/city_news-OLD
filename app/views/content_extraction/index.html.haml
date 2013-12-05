@@ -18,6 +18,8 @@
   %p= @feed.url
 
 - if @content.present?
+  %h2 Original Main Html
+  = @content["original_main_html_content"]
   %h2 Main Html
   = @content["main_html_content"]
   %br
