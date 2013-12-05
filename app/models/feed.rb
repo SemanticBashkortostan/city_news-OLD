@@ -262,8 +262,15 @@ class Feed < ActiveRecord::Base
   end
 
 
-  def set_feed_source    
-    self.feed_source_id ||= FeedSource.where("url like '%#{domain}%'").first.try(:id)
+  def set_feed_source  
+    #TODO: Refactor this awesome!!!  
+    if domain == "delogazeta.ru"
+      self.feed_source = FeedSource.find_by_url("http://feeds.feedburner.com/delogazeta/UGfI?format=xml")
+    elsif domain == "www.bashinform.ru"  
+      self.feed_source = FeedSource.find_by_url("http://feeds.feedburner.com/bashinform/all?format=xml")
+    else
+      self.feed_source = FeedSource.where("url like '%#{domain}%'").first
+    end
   end
 
 end
