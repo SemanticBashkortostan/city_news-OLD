@@ -25,7 +25,7 @@ class Scheduler::MainContentFetcher
 
 
   def fetch_and_set_main_content_to_feeds
-    feeds.all do |feed|
+    feeds.all.each do |feed|
       begin
         content = ContentExtractor.get(:pipeline, url: feed.url)
         feed.main_html_content = content['main_html_content']
