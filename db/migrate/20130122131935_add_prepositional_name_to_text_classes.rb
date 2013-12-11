@@ -6,8 +6,10 @@ class AddPrepositionalNameToTextClasses < ActiveRecord::Migration
     name_to_prepositional = {"Уфа" => "Уфы", "Стерлитамак" => "Стерлитамака", "Нефтекамск" => "Нефтекамска", "Ишимбай" => "Ишимбая", "Салават" => "Салавата"}
     name_to_prepositional.each do |k,v|
       tc = TextClass.find_by_name k
-      tc.prepositional_name = v
-      tc.save!
+      if tc 
+        tc.prepositional_name = v
+        tc.save!
+      end
     end
   end
 

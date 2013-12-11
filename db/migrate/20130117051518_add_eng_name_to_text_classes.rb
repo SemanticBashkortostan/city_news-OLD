@@ -7,8 +7,10 @@ class AddEngNameToTextClasses < ActiveRecord::Migration
     eng = ["Ufa", "Sterlitamak", "Salavat", "Ishimbay", "Neftekamsk"]
     rus.count.times do |i|
       tc = TextClass.find_by_name rus[i]
-      tc.eng_name = eng[i]
-      tc.save!
+      if tc 
+        tc.eng_name = eng[i]
+        tc.save!
+      end
     end
   end
 

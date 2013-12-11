@@ -174,37 +174,6 @@ ALTER SEQUENCE classifiers_id_seq OWNED BY classifiers.id;
 
 
 --
--- Name: docs_counts; Type: TABLE; Schema: public; Owner: -; Tablespace: 
---
-
-CREATE TABLE docs_counts (
-    id integer NOT NULL,
-    classifier_id integer,
-    text_class_id integer,
-    docs_count integer DEFAULT 0
-);
-
-
---
--- Name: docs_counts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE docs_counts_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: docs_counts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE docs_counts_id_seq OWNED BY docs_counts.id;
-
-
---
 -- Name: features; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -351,8 +320,8 @@ CREATE TABLE feeds (
     text_class_id integer,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    similar_score double precision,
     ancestry character varying(255),
+    similar_score double precision,
     feed_source_id integer,
     main_html_content text
 );
@@ -375,42 +344,6 @@ CREATE SEQUENCE feeds_id_seq
 --
 
 ALTER SEQUENCE feeds_id_seq OWNED BY feeds.id;
-
-
---
--- Name: rb7_news; Type: TABLE; Schema: public; Owner: -; Tablespace: 
---
-
-CREATE TABLE rb7_news (
-    id integer NOT NULL,
-    nid integer,
-    title character varying(255),
-    annotation character varying(500),
-    text text,
-    source character varying(255),
-    created integer,
-    changed integer,
-    tid integer
-);
-
-
---
--- Name: rb7_news_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE rb7_news_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: rb7_news_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE rb7_news_id_seq OWNED BY rb7_news.id;
 
 
 --
@@ -730,13 +663,6 @@ ALTER TABLE ONLY classifiers_feeds ALTER COLUMN id SET DEFAULT nextval('classifi
 -- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY docs_counts ALTER COLUMN id SET DEFAULT nextval('docs_counts_id_seq'::regclass);
-
-
---
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
---
-
 ALTER TABLE ONLY features ALTER COLUMN id SET DEFAULT nextval('features_id_seq'::regclass);
 
 
@@ -766,13 +692,6 @@ ALTER TABLE ONLY feedbacks_feedbacks ALTER COLUMN id SET DEFAULT nextval('feedba
 --
 
 ALTER TABLE ONLY feeds ALTER COLUMN id SET DEFAULT nextval('feeds_id_seq'::regclass);
-
-
---
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY rb7_news ALTER COLUMN id SET DEFAULT nextval('rb7_news_id_seq'::regclass);
 
 
 --
@@ -832,11 +751,11 @@ ALTER TABLE ONLY vocabulary_entries ALTER COLUMN id SET DEFAULT nextval('vocabul
 
 
 --
--- Name: active_admin_comments_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+-- Name: admin_notes_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
 --
 
 ALTER TABLE ONLY active_admin_comments
-    ADD CONSTRAINT active_admin_comments_pkey PRIMARY KEY (id);
+    ADD CONSTRAINT admin_notes_pkey PRIMARY KEY (id);
 
 
 --
@@ -861,14 +780,6 @@ ALTER TABLE ONLY classifiers_feeds
 
 ALTER TABLE ONLY classifiers
     ADD CONSTRAINT classifiers_pkey PRIMARY KEY (id);
-
-
---
--- Name: docs_counts_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
---
-
-ALTER TABLE ONLY docs_counts
-    ADD CONSTRAINT docs_counts_pkey PRIMARY KEY (id);
 
 
 --
@@ -1008,20 +919,6 @@ CREATE INDEX index_admin_notes_on_resource_type_and_resource_id ON active_admin_
 --
 
 CREATE INDEX index_classifiers_feeds_on_classifier_id_and_feed_id ON classifiers_feeds USING btree (classifier_id, feed_id);
-
-
---
--- Name: index_docs_counts_on_classifier_id; Type: INDEX; Schema: public; Owner: -; Tablespace: 
---
-
-CREATE INDEX index_docs_counts_on_classifier_id ON docs_counts USING btree (classifier_id);
-
-
---
--- Name: index_docs_counts_on_text_class_id; Type: INDEX; Schema: public; Owner: -; Tablespace: 
---
-
-CREATE INDEX index_docs_counts_on_text_class_id ON docs_counts USING btree (text_class_id);
 
 
 --
@@ -1165,13 +1062,6 @@ CREATE INDEX index_vocabulary_entries_on_token ON vocabulary_entries USING btree
 
 
 --
--- Name: uniq_nid; Type: INDEX; Schema: public; Owner: -; Tablespace: 
---
-
-CREATE UNIQUE INDEX uniq_nid ON rb7_news USING btree (nid);
-
-
---
 -- Name: unique_schema_migrations; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -1230,8 +1120,6 @@ INSERT INTO schema_migrations (version) VALUES ('20130224161223');
 INSERT INTO schema_migrations (version) VALUES ('20130226074302');
 
 INSERT INTO schema_migrations (version) VALUES ('20130226105149');
-
-INSERT INTO schema_migrations (version) VALUES ('20130304064307');
 
 INSERT INTO schema_migrations (version) VALUES ('20130305071745');
 
