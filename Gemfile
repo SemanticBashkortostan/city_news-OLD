@@ -67,6 +67,7 @@ group :development do
   gem "hpricot", ">= 0.8.6"
   gem "ruby_parser", ">= 3.0.1"
   gem "quiet_assets", ">= 1.0.1"
+  gem 'thin'
 end
 
 
