@@ -27,6 +27,7 @@ gem 'daemons'
 gem 'clockwork'
 gem 'russian'
 gem 'whenever'
+gem 'replicate'
 
 gem 'honeybadger'
 
