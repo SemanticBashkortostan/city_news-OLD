@@ -323,7 +323,8 @@ CREATE TABLE feeds (
     ancestry character varying(255),
     similar_score double precision,
     feed_source_id integer,
-    main_html_content text
+    main_html_content text,
+    descendants_count integer DEFAULT 0
 );
 
 
@@ -1146,3 +1147,5 @@ INSERT INTO schema_migrations (version) VALUES ('20131130094218');
 INSERT INTO schema_migrations (version) VALUES ('20131202180430');
 
 INSERT INTO schema_migrations (version) VALUES ('20131202183320');
+
+INSERT INTO schema_migrations (version) VALUES ('20140125182705');

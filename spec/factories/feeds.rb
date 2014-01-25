@@ -3,7 +3,7 @@
 FactoryGirl.define do
   factory :feed do
     title "MyString"
-    url "MyString"
+    url { "MyString#{rand()}" }
     summary "MyText"
     published_at "2012-12-05 22:17:39"
     text_class_id 1

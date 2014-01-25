@@ -45,6 +45,8 @@ gem 'state_machine'
 
 gem 'activeresource'
 
+gem 'rack-mini-profiler'
+
 
 group :assets do
   gem 'sass-rails',   '~> 3.2.3'

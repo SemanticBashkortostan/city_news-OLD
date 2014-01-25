@@ -53,6 +53,7 @@ class Feed < ActiveRecord::Base
 
   before_validation :convert_if_punycode_url
   before_save :strip_html_tags, :set_default_published_at  
+  after_save :update_descendants_count, if: :ancestry_changed?
   before_create :set_feed_source
 
 
@@ -151,7 +152,6 @@ class Feed < ActiveRecord::Base
   protected
 
 
-
   #NOTE: Feature is city if he has text_class_id. text_class_id only set for the token which satisfy to city_regexp
   def city_and_named_features(raw_feature_vectors)
     city_features = []
@@ -234,6 +234,11 @@ class Feed < ActiveRecord::Base
 
   def summary_or_title_presence
     errors.add(:base, "Title and summary is not exist") if summary.blank? && title.blank?
+  end
+
+
+  def update_descendants_count    
+    ancestors.each{ |feed| feed.update_column :descendants_count, feed.descendants.count }    
   end
 
 

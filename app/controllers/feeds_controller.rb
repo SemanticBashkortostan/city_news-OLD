@@ -21,8 +21,6 @@
 #
 
 class FeedsController < ApplicationController
-
-
   def index
     scope = Feed
     if params[:city]
@@ -59,5 +57,4 @@ class FeedsController < ApplicationController
   def set_active_menu_item
     params[:city] = @feed.text_class.eng_name.downcase
   end
-
 end
