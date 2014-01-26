@@ -1,16 +1,9 @@
 = page_title @title
 = page_description @description
 
-- @grouped_feeds.each do |date, entries|
-  %h2= Russian.strftime Time.parse(date), "%a, %d %B %Y"
-  - entries.each do |entry|
-    %span.city= link_to entry.text_class.name, feeds_city_path( :city => entry.text_class.eng_name.downcase ) if params[:city].blank?
-    = link_to entry.title.try(:html_safe), feed_path(entry), :class => :entry
-    - if entry.descendants.count > 0
-      %span{:title => "Количество похожих новостей", :class  => "badge"}= entry.descendants.count
-    - if entry.summary
-      %p 
-        = entry.summary[0..500].html_safe
-        = "..." if entry.summary.length > 500
+- cache(@cache_key_for_grouped_feeds) do
+  - @grouped_feeds.each do |date, feeds|
+    %h2= Russian.strftime Time.parse(date), "%a, %d %B %Y"
+    = render partial: 'feed', collection: feeds
 
 = paginate @feeds

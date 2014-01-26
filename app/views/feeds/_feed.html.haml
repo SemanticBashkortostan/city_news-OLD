@@ -1,0 +1,9 @@
+- cache(feed) do
+  %span.city= link_to feed.text_class.name, feeds_city_path( :city => feed.text_class.eng_name.downcase ) if params[:city].blank?
+  = link_to feed.title.try(:html_safe), feed_path(feed), :class => :entry
+  - if feed.descendants_count > 0
+    %span{:title => "Количество похожих новостей", :class  => "badge"}= feed.descendants_count
+  - if feed.summary
+    %p
+      = feed.summary[0..500].html_safe
+      = "..." if feed.summary.length > 500

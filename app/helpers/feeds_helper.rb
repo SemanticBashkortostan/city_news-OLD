@@ -18,4 +18,7 @@
 # along with CityNews.  If not, see <http://www.gnu.org/licenses/>.
 #
 module FeedsHelper
+  def cache_key_for_grouped_feeds
+    Feed.with_any_text_class.maximum(:updated_at).to_i.to_s
+  end
 end

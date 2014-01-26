@@ -237,8 +237,10 @@ class Feed < ActiveRecord::Base
   end
 
 
-  def update_descendants_count    
-    ancestors.each{ |feed| feed.update_column :descendants_count, feed.descendants.count }    
+  def update_descendants_count
+    feeds = ancestors
+    feeds += Feed.where(id: ancestry_was.split('/')).to_a if ancestry_was.present?
+    feeds.each{ |feed| feed.update_column :descendants_count, feed.descendants.count }
   end
 
 

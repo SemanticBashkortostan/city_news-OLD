@@ -979,6 +979,13 @@ CREATE INDEX index_feeds_on_feed_source_id ON feeds USING btree (feed_source_id)
 
 
 --
+-- Name: index_feeds_on_updated_at; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_feeds_on_updated_at ON feeds USING btree (updated_at);
+
+
+--
 -- Name: index_roles_on_name; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -1149,3 +1156,5 @@ INSERT INTO schema_migrations (version) VALUES ('20131202180430');
 INSERT INTO schema_migrations (version) VALUES ('20131202183320');
 
 INSERT INTO schema_migrations (version) VALUES ('20140125182705');
+
+INSERT INTO schema_migrations (version) VALUES ('20140126175128');

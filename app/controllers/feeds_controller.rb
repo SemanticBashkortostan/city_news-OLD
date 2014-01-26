@@ -21,6 +21,7 @@
 #
 
 class FeedsController < ApplicationController
+
   def index
     scope = Feed
     if params[:city]
@@ -29,10 +30,13 @@ class FeedsController < ApplicationController
       @description = "Новости #{text_class.prepositional_name}."
       scope = scope.with_text_klass( text_class.id ).order 'published_at desc'
     else
-      scope = scope.includes(:text_class).where('text_class_id is not null').order 'published_at desc'
+      scope = scope.includes(:text_class).with_any_text_class.order 'published_at desc'
     end
     @feeds = scope.roots.page params[:page]
     @grouped_feeds = @feeds.roots.where('published_at is not null').group_by{ |feed| feed.published_at.strftime("%d-%m-%Y") }
+
+    #NOTE: why not working from helper??
+    @cache_key_for_grouped_feeds = Feed.with_any_text_class.maximum(:updated_at).to_i.to_s
     respond_to do |format|
       format.html      
     end
