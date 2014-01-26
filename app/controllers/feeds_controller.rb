@@ -36,7 +36,8 @@ class FeedsController < ApplicationController
     @grouped_feeds = @feeds.roots.where('published_at is not null').group_by{ |feed| feed.published_at.strftime("%d-%m-%Y") }
 
     #NOTE: why not working from helper??
-    @cache_key_for_grouped_feeds = Feed.with_any_text_class.maximum(:updated_at).to_i.to_s
+    @cache_key_for_grouped_feeds = Feed.with_any_text_class.maximum(:updated_at).to_i.to_s +
+      params[:city].to_s
     respond_to do |format|
       format.html      
     end
