@@ -1,9 +1,8 @@
 = page_title @title
 = page_description @description
 
-- cache(@cache_key_for_grouped_feeds) do
-  - @grouped_feeds.each do |date, feeds|
-    %h2= Russian.strftime Time.parse(date), "%a, %d %B %Y"
-    = render partial: 'feed', collection: feeds
+- @grouped_feeds.each do |date, feeds|
+  %h2= Russian.strftime Time.parse(date), "%a, %d %B %Y"
+  = render partial: 'feed', collection: feeds
 
 = paginate @feeds
