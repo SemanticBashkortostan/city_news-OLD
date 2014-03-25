@@ -28,7 +28,7 @@ gem 'clockwork'
 gem 'russian'
 gem 'replicate'
 
-gem 'honeybadger'
+gem 'honeybadger', '~> 1.11.2'
 
 gem 'rabl-rails'
 
