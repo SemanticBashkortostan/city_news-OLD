@@ -23,7 +23,6 @@ class Scheduler::MainContentFetcher
     @limit_count = limit_count
   end
 
-
   def fetch_and_set_main_content_to_feeds
     feeds.all.each do |feed|
       begin

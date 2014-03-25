@@ -1,0 +1,5 @@
+check process clockwork with pidfile <%= fetch(:clockwork_pidfile) %>
+  start program = "/etc/init.d/clockwork start"
+  stop program = "/etc/init.d/clockwork stop"
+  if 5 restarts within 5 cycles then timeout
+  group clockwork

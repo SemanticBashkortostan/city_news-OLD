@@ -47,6 +47,9 @@ gem 'activeresource'
 
 gem 'rack-mini-profiler'
 
+gem 'capistrano', '~> 3.1.0'
+gem 'capistrano-rails', '~> 1.1'
+gem 'unicorn'
 
 group :assets do
   gem 'sass-rails',   '~> 3.2.3'
@@ -56,14 +59,6 @@ group :assets do
   gem 'turbo-sprockets-rails3'
 end
 
-
-gem 'capistrano'
-gem 'rvm-capistrano'
-group :production do
-  gem "passenger"
-end
-
-
 group :development do
   gem "haml-rails", ">= 0.3.5"
   gem "hpricot", ">= 0.8.6"
@@ -72,7 +67,6 @@ group :development do
   gem 'thin'
 end
 
-
 group :test do
   gem "database_cleaner", ">= 0.9.1"
   gem "email_spec", ">= 1.4.0"
@@ -80,7 +74,6 @@ group :test do
   gem "capybara", ">= 1.1.3"
   gem "cucumber-rails", ">= 1.3.0", :require => false
 end
-
 
 group :development, :test do
   gem "factory_girl_rails", ">= 4.1.0"

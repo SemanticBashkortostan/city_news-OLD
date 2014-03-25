@@ -1,0 +1,20 @@
+check process unicorn with pidfile <%= fetch(:unicorn_pidfile) %>
+  start program = "/etc/init.d/unicorn start"
+  stop program = "/etc/init.d/unicorn stop"
+  if 5 restarts within 5 cycles then timeout
+  group unicorn
+
+check file unicorn-restart.txt with path <%= fetch(:pids_path) %>/unicorn-restart.txt
+  if changed timestamp then
+    exec "/etc/init.d/unicorn restart"
+
+<% fetch(:unicorn_concurrency).times do |n| %>
+  <% pid = fetch(:unicorn_pidfile).sub(".pid", ".#{n}.pid") %>
+check process unicorn_worker_<%= n %> with pidfile <%= pid %>
+  start program = "/bin/true"
+  stop program = "/usr/bin/test -s <%= pid %> && /bin/kill -QUIT `cat <%= pid %>`"
+  if mem > 350.0 MB for 1 cycles then restart
+  if cpu > 50% for 3 cycles then restart
+  if 5 restarts within 5 cycles then timeout
+  group unicorn-workers
+<% end %>
