@@ -12,7 +12,12 @@
 %blockquote
   - if @feed.main_html_content
     %p= @feed.main_html_content.html_safe
-  %small= link_to "Источник", feeds_goto_path( :url => @feed.url ), :class => 'muted news_source text-right'
+
+  .share-buttons
+    = render partial: 'social_buttons'
+  .news-source
+    %small= link_to "Источник", feeds_goto_path( :url => @feed.url ), :class => 'muted news_source text-right'
+
 
 - if @feed.descendants.present?
   %div.similars

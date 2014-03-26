@@ -36,7 +36,7 @@ class FeedsController < ApplicationController
     @grouped_feeds = @feeds.roots.where('published_at is not null').group_by{ |feed| feed.published_at.strftime("%d-%m-%Y") }
 
     respond_to do |format|
-      format.html      
+      format.html
     end
   end
 
@@ -44,7 +44,7 @@ class FeedsController < ApplicationController
   def show
     @feed = Feed.find params[:id]
     set_active_menu_item
-    @title = @feed.text_class.name
+    @title = @feed.text_class.name + " | " + @feed.title
   end
 
 
