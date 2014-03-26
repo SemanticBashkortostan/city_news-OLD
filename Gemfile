@@ -24,7 +24,7 @@ gem "settingslogic"
 gem "acts-as-taggable-on"
 gem "simpleidn"
 gem 'daemons'
-gem 'clockwork'
+gem 'clockwork', '~> 0.7.3'
 gem 'russian'
 gem 'replicate'
 
