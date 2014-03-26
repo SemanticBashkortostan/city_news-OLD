@@ -39,9 +39,9 @@ class Feed < ActiveRecord::Base
   validates :url, :uniqueness => true, :on => :create
   validate :summary_or_title_presence
 
-  scope :without_uncorrect_tags, tagged_with(Classifier::UNCORRECT_DATA_TAGS, :exclude => true )
+  scope :without_uncorrect_tags, lambda { tagged_with(Classifier::UNCORRECT_DATA_TAGS, :exclude => true ) }
   scope :with_text_klass, lambda{ |text_klass_id| without_uncorrect_tags.where('text_class_id = ?', text_klass_id) }
-  scope :unclassified_fetched, tagged_with(["fetched", "production"], :match_all => true).without_uncorrect_tags.where(:text_class_id => nil)
+  scope :unclassified_fetched, lambda { tagged_with(["fetched", "production"], :match_all => true).without_uncorrect_tags.where(:text_class_id => nil) }
   scope :was_trainers, lambda{ |classifier_id| includes(:classifiers).where(:classifiers_feeds => {:classifier_id => classifier_id}) }
 
   scope :without_main_content, where(:main_html_content => nil)
@@ -52,7 +52,7 @@ class Feed < ActiveRecord::Base
 
 
   before_validation :convert_if_punycode_url
-  before_save :strip_html_tags, :set_default_published_at  
+  before_save :strip_html_tags, :set_default_published_at
   after_save :update_descendants_count, if: :ancestry_changed?
   before_create :set_feed_source
 
