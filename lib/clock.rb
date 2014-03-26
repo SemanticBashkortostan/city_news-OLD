@@ -21,6 +21,9 @@ require 'clockwork'
 
 require File.expand_path('../../config/boot', __FILE__)
 require File.expand_path('../../config/environment', __FILE__)
+require File.expand_path('../../initializers/active_admin', __FILE__)
+require File.expand_path('../../initializers/honeybadger', __FILE__)
+
 require "#{Rails.root}/lib/scheduler/classifier"
 require "#{Rails.root}/lib/scheduler/production_feeds_fetcher"
 require "#{Rails.root}/lib/scheduler/main_content_fetcher"
