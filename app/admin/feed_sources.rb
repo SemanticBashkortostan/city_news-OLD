@@ -11,6 +11,8 @@ ActiveAdmin.register FeedSource do
     redirect_to :action => :index, :notice => notice
   end  
 
+  filter :url
+
   index do
     column :id
     column :updated_at
