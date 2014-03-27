@@ -7,7 +7,11 @@
 
   <div class="span1">
     <script type="text/javascript">
-      document.write(VK.Share.button(false,{type: "round", text: "Поделиться"}));
+      document.write(VK.Share.button(false,{
+        type: "round", 
+        text: "Поделиться",
+        description: "<%= @title %>"
+      }));
     </script>
   </div>
 </div>
