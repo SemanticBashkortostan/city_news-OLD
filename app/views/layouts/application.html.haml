@@ -6,7 +6,7 @@
     %title= content_for?(:title) ? ("Новости Башкортостана | " + yield(:title)) : "Новости Башкортостана"
     %meta{:content => "Новости Башкортостана, #{TextClass.all.collect{|e| e.name}.join(', ')}", :name => "keywords"}
     - default_descr = "Агрегатор новостей Башкортостана по городам из разных источников."
-    %meta{:content => content_for?(:description) ? (default_descr + yield(:description)) : default_descr, :name => "description"}    
+    %meta{:content => content_for?(:description) ? (default_descr + yield(:description)) : default_descr, :name => "description"}
     = favicon_link_tag "bash-logo-favicon.ico"
     = csrf_meta_tags
     = stylesheet_link_tag "application", :media => "all"
@@ -34,23 +34,29 @@
         .container
           = render 'layouts/navigation'
     #main{:role => "main"}
-      .container      
+      .container
         .row
           .span9.content
             = render 'layouts/messages'
             = yield
           .span2
             %ul{ :class => "nav nav-list" }
-              %li 
-                %g:plusone{ :href => "http://www.rbcitynews.ru" }       
+              %li
+                %g:plusone{ :href => "http://www.rbcitynews.ru" }
               %li
                 #vk_like
                 :javascript
-                  VK.Widgets.Like("vk_like", {type: "mini"});
+                  window.onload = function () {
+                    VK.Widgets.Like("vk_like", {
+                    type: "mini",
+                    pageTitle: "Новости Башкортостана по городам",
+                    pageDescription: "Агрегатор новостей Башкортостана по городам из разных источников.",
+                    pageUrl: "http://rbcitynews.ru"}, 1337);
+                  }
               %li
-                = link_to "О сайте", about_path       
+                = link_to "О сайте", about_path
               %li
-                %div{ :id => 'feedback-form', :title => "Сообщение" }                
+                %div{ :id => 'feedback-form', :title => "Сообщение" }
                 = link_to "Обратная связь", feedbacks.feedback_path, :remote => true, :class => 'feedback'
       / ! end of .container
     / ! end of #main
