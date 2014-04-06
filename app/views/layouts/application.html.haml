@@ -46,13 +46,11 @@
               %li
                 #vk_like
                 :javascript
-                  window.onload = function () {
                     VK.Widgets.Like("vk_like", {
                     type: "mini",
                     pageTitle: "Новости Башкортостана по городам",
                     pageDescription: "Агрегатор новостей Башкортостана по городам из разных источников.",
-                    pageUrl: "http://rbcitynews.ru"}, 1337);
-                  }
+                    pageUrl: "http://rbcitynews.ru"}, 0);
               %li
                 = link_to "О сайте", about_path
               %li
