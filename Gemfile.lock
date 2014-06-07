@@ -123,6 +123,10 @@ GEM
       thread_safe (~> 0.1)
       warden (~> 1.2.3)
     diff-lcs (1.2.4)
+    dumper (1.5.0)
+      multi_json (>= 1.0)
+      multipart-post (>= 1.1.5)
+      posix-spawn (>= 0.3.6)
     email_spec (1.5.0)
       launchy (~> 2.1)
       mail (~> 2.2)
@@ -190,6 +194,7 @@ GEM
     mime-types (1.25.1)
     multi_json (1.8.2)
     multi_test (0.0.2)
+    multipart-post (2.0.0)
     net-scp (1.1.2)
       net-ssh (>= 2.6.5)
     net-ssh (2.8.0)
@@ -200,6 +205,7 @@ GEM
     polyamorous (0.5.0)
       activerecord (~> 3.0)
     polyglot (0.3.3)
+    posix-spawn (0.3.8)
     quiet_assets (1.0.2)
       railties (>= 3.1, < 5.0)
     rabl-rails (0.3.3)
@@ -332,6 +338,7 @@ DEPENDENCIES
   daemons
   database_cleaner (>= 0.9.1)
   devise (~> 3.1.1)
+  dumper
   email_spec (>= 1.4.0)
   factory_girl_rails (>= 4.1.0)
   feedbacks!
