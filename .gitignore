@@ -35,6 +35,7 @@ db/*.sqlite3
 /config/initializers/exception_notification.rb
 /config/initializers/secret_token.rb
 /config/initializers/honeybadger.rb
+/config/initializers/dumper.rb
 Capfile
 /config/deploy.rb
 /coverage.data

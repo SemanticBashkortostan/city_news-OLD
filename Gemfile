@@ -50,6 +50,10 @@ gem 'capistrano', '~> 3.1.0'
 gem 'capistrano-rails', '~> 1.1'
 gem 'unicorn'
 
+group :production do
+  gem 'dumper'
+end
+
 group :assets do
   gem 'sass-rails',   '~> 3.2.3'
   gem 'coffee-rails', '~> 3.2.1'
@@ -78,9 +82,3 @@ group :development, :test do
   gem "factory_girl_rails", ">= 4.1.0"
   gem "rspec-rails", ">= 2.11.4"
 end
-
-
-
-
-
-
