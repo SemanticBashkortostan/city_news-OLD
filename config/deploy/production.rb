@@ -9,3 +9,19 @@
 # Whenever
 #set :whenever_roles, :worker
 #set :whenever_command, "bundle exec whenever"
+
+set :stage, :production
+
+server 'app.rbcitynews.ru',
+  user: 'deploy',
+  roles: %w{web app db},
+  ssh_options: {
+    port: 22
+  }
+
+server 'workers.rbcitynews.ru',
+  user: 'deploy',
+  roles: %w{scheduler},
+  ssh_options: {
+    port: 22
+  }
