@@ -3,6 +3,9 @@
 
 - @grouped_feeds.each do |date, feeds|
   %h2= Russian.strftime Time.parse(date), "%a, %d %B %Y"
-  = render partial: 'feed', collection: feeds
+  - feeds.each do |feed|
+    -#TODO: CLEAN!!!
+    - if feed.feed_source_id != 15
+      = render partial: 'feed', object: feed
 
 = paginate @feeds

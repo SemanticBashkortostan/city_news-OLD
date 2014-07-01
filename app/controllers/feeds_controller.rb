@@ -45,6 +45,11 @@ class FeedsController < ApplicationController
     @feed = Feed.find params[:id]
     set_active_menu_item
     @title = @feed.text_class.name + " | " + @feed.title
+    #TODO: CLEAN!!!
+    if @feed.feed_source_id == 15
+      flash[:notice] = "Удалено по требованию правообладателя"
+      redirect_to feeds_city_url(city: 'sterlitamak')
+    end
   end
 
 
