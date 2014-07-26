@@ -1,6 +1,8 @@
 City News
 ========================
 
+This is old open source version which is not maintained now.
+
 Wiki: http://github.com/sld/city_news/wiki
 
 # Description
@@ -16,7 +18,7 @@ ________________________
 
 # License
 
-Copyright (C) 2013 Idris Yusupov
+Copyright (C) 2013-2014 Idris Yusupov
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
